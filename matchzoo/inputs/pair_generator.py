@@ -699,7 +699,7 @@ class DMN_PairGeneratorWithIntents(PairBasicGenerator):
         with open(intents_file) as fp:
             line = fp.readline()
             while line:
-                intents.append(line)
+                intents.append(int(line[0]))
                 line = fp.readline()
 
         return intents
@@ -709,7 +709,7 @@ class DMN_PairGeneratorWithIntents(PairBasicGenerator):
         X1_len = np.zeros((self.batch_size * 2, self.data1_max_utt_num), dtype=np.int32)  # max 10 turns
         X2 = np.zeros((self.batch_size * 2, self.data2_maxlen), dtype=np.int32)
         X2_len = np.zeros((self.batch_size * 2,), dtype=np.int32)
-        Y = np.zeros((self.batch_size * 2, self.max_intent), dtype=np.int32)
+        Y = np.zeros((self.batch_size * 2, self.max_intent + 1), dtype=np.int32)
 
         X1[:] = self.fill_word # the default word index is the last word, which is the added PAD word
         X2[:] = self.fill_word
