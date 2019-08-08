@@ -151,9 +151,7 @@ def train(config):
     print '[Model] Model Compile Done.'
 
     def custom_loss(y_true, y_pred):
-        cce = categorical_crossentropy(y_true, y_pred)
-        lambda_domain_loss = 1.0
-        return cce * lambda_domain_loss
+        return categorical_crossentropy(y_true, y_pred)
 
     model_clf.compile(optimizer=optimizer, loss=custom_loss)
     print '[Model] Intent classifier model Compile Done.'

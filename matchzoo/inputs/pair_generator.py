@@ -685,6 +685,7 @@ class DMN_PairGeneratorWithIntents(PairBasicGenerator):
         self.fill_word = config['vocab_size'] - 1
         self.check_list.extend(['data1', 'data2', 'text1_maxlen', 'text2_maxlen', 'text1_max_utt_num'])
         self.intents = self.get_intents(config['intents_file'])
+        self.max_intent = max(self.intents)
         if config['use_iter']:
             self.batch_iter = self.get_batch_iter()
 
@@ -708,7 +709,7 @@ class DMN_PairGeneratorWithIntents(PairBasicGenerator):
         X1_len = np.zeros((self.batch_size * 2, self.data1_max_utt_num), dtype=np.int32)  # max 10 turns
         X2 = np.zeros((self.batch_size * 2, self.data2_maxlen), dtype=np.int32)
         X2_len = np.zeros((self.batch_size * 2,), dtype=np.int32)
-        Y = np.zeros((self.batch_size * 2,), dtype=np.int32)
+        Y = np.zeros((self.batch_size * 2, self.max_intent), dtype=np.int32)
 
         X1[:] = self.fill_word # the default word index is the last word, which is the added PAD word
         X2[:] = self.fill_word
@@ -720,7 +721,7 @@ class DMN_PairGeneratorWithIntents(PairBasicGenerator):
                 d1, d2p, d2n = random.choice(self.pair_list)
                 index_p = int(d2p[1:])
 
-            Y[i] = self.intents[index_p]
+            Y[i, self.intents[index_p]] = 1
 
             if len(self.data2[d2p]) == 0:
                 d2p_ws = [self.fill_word]
