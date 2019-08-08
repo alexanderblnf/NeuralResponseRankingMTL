@@ -685,7 +685,7 @@ class DMN_PairGeneratorWithIntents(PairBasicGenerator):
         self.fill_word = config['vocab_size'] - 1
         self.check_list.extend(['data1', 'data2', 'text1_maxlen', 'text2_maxlen', 'text1_max_utt_num'])
         self.intents = self.get_intents(config['intents_file'])
-        self.max_intent = max(self.intents)
+        self.max_intent = config['max_intent']
         if config['use_iter']:
             self.batch_iter = self.get_batch_iter()
 

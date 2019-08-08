@@ -137,7 +137,7 @@ class DMN_CNN(BasicModel):
         word_bigru_rep = Flatten()(concatenate(query_bigru_reps + doc_bigru_reps))
         q_d_rep = concatenate([word_embed_rep, word_bigru_rep])
 
-        out_clf = Dense(37, activation='softmax')(q_d_rep)
+        out_clf = Dense(self.config['max_intent'], activation='softmax')(q_d_rep)
         model_clf = Model(inputs=[query, doc], outputs=out_clf)
 
         # MLP
