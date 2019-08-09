@@ -731,3 +731,86 @@ class ListGenerator_Feats(ListBasicGenerator):
             list_count_ls.append(list_count)
         return x1_ls, x1_len_ls, x2_ls, x2_len_ls, x3_ls, x4_ls,  y_ls, list_count_ls
 
+class DMN_ListGeneratorWithIntents(ListBasicGenerator):
+    def __init__(self, config={}):
+        super(DMN_ListGeneratorWithIntents, self).__init__(config=config)
+        self.data1 = config['data1']
+        self.data2 = config['data2']
+        self.data1_maxlen = config['text1_maxlen']
+        self.data1_max_utt_num = int(config['text1_max_utt_num'])
+        self.data2_maxlen = config['text2_maxlen']
+        self.intents = self.get_intents(config['intents_file'])
+        self.max_intent = config['max_intent']
+        self.fill_word = config['vocab_size'] - 1
+        self.embed = config['embed']
+        self.check_list.extend(['data1', 'data2', 'text1_maxlen', 'text2_maxlen', 'embed', 'text1_max_utt_num'])
+        if not self.check():
+            raise TypeError('[DMN_ListGenerator] parameter check wrong.')
+        print '[DMN_ListGenerator] init done, list number: %d. ' % (self.num_list)
+
+    def get_intents(self, intents_file):
+        intents = []
+        with open(intents_file) as fp:
+            line = fp.readline()
+            while line:
+                intents.append(int(line[0]))
+                line = fp.readline()
+
+        return intents
+
+    def get_batch(self):
+        while self.point < self.num_list:
+            currbatch = []
+            if self.point + self.batch_list <= self.num_list:
+                currbatch = self.list_list[self.point: self.point+self.batch_list]
+                self.point += self.batch_list
+            else:
+                currbatch = self.list_list[self.point:]
+                self.point = self.num_list
+
+            bsize = sum([len(pt[1]) for pt in currbatch]) # 50 * 10 = 500
+            #print ('test bsize: ', bsize)
+            ID_pairs = []
+            list_count = [0]
+            X1 = np.zeros((bsize, self.data1_max_utt_num, self.data1_maxlen), dtype=np.int32)
+            X1_len = np.zeros((bsize, self.data1_max_utt_num), dtype=np.int32)
+            X2 = np.zeros((bsize, self.data2_maxlen), dtype=np.int32)
+            X2_len = np.zeros((bsize,), dtype=np.int32)
+            Y = np.zeros((bsize,), dtype=np.int32)
+            X1[:] = self.fill_word
+            X2[:] = self.fill_word
+            j = 0
+            #print ('test currbatch: ', currbatch)
+            #print ('test len(currbatch): ', len(currbatch))
+            for pt in currbatch: # 50
+                d1, d2_list = pt[0], pt[1]
+                #print('test d1 d2_list', d1, d2_list)
+                list_count.append(list_count[-1] + len(d2_list))
+                for l, d2 in d2_list: # 10
+                    # if len(self.data1[d1]) > 10, we only keep the most recent 10 utterances
+                    utt_start = 0 if len(self.data1[d1]) < self.data1_max_utt_num else (
+                    len(self.data1[d1]) - self.data1_max_utt_num)
+                    for z in range(utt_start,len(self.data1[d1])):
+                        d1_ws = self.data1[d1][z].split()
+                        d1_len = min(self.data1_maxlen, len(d1_ws))
+                        X1[j, z-utt_start, :d1_len], X1_len[j, z-utt_start] = d1_ws[:d1_len], d1_len
+                    #print ("l d2: ", l, d2)
+                    if len(self.data2[d2]) == 0:
+                        d2_ws = [self.fill_word]
+                    else:
+                        d2_ws = self.data2[d2][0].split()
+                    d2_len = min(self.data2_maxlen, len(d2_ws))
+                    X2[j, :d2_len], X2_len[j] = d2_ws[:d2_len], d2_len
+                    ID_pairs.append((d1, d2))
+                    index_d1 = int(d1[1:])
+                    Y[j] = self.intents[index_d1]
+                    j += 1
+            yield X1, X1_len, X2, X2_len, Y, ID_pairs, list_count
+
+    def get_batch_generator(self):
+        for X1, X1_len, X2, X2_len, Y, ID_pairs, list_counts in self.get_batch():
+            if self.config['use_dpool']:
+                yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'dpool_index': DynamicMaxPooling.dynamic_pooling_index(X1_len, X2_len, self.config['text1_maxlen'], self.config['text2_maxlen']), 'ID': ID_pairs, 'list_counts': list_counts}, Y)
+            else:
+                yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'ID': ID_pairs, 'list_counts': list_counts}, Y)
+

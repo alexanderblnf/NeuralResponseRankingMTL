@@ -686,6 +686,7 @@ class DMN_PairGeneratorWithIntents(PairBasicGenerator):
         self.check_list.extend(['data1', 'data2', 'text1_maxlen', 'text2_maxlen', 'text1_max_utt_num'])
         self.intents = self.get_intents(config['intents_file'])
         self.max_intent = config['max_intent']
+        self.samples_per_context = config['samples_per_context']
         if config['use_iter']:
             self.batch_iter = self.get_batch_iter()
 
@@ -715,13 +716,13 @@ class DMN_PairGeneratorWithIntents(PairBasicGenerator):
         X2[:] = self.fill_word
         for i in range(self.batch_size * 2):
             d1, d2p, d2n = random.choice(self.pair_list)
-            index_p = int(d2p[1:])
+            intents_index = int(d1[1:]) * self.samples_per_context
 
-            while self.intents[index_p] == 0:
+            while self.intents[intents_index] == 0:
                 d1, d2p, d2n = random.choice(self.pair_list)
-                index_p = int(d2p[1:])
+                intents_index = int(d1[1:]) * self.samples_per_context
 
-            Y[i, self.intents[index_p]] = 1
+            Y[i, self.intents[intents_index]] = 1
 
             if len(self.data2[d2p]) == 0:
                 d2p_ws = [self.fill_word]

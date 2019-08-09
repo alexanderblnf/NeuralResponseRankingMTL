@@ -21,6 +21,7 @@ from utils import *
 import inputs
 import metrics
 from losses import *
+import os
 
 
 def load_model(config):
@@ -127,7 +128,7 @@ def train(config):
             conf['qa_comat'] = dataset[conf['qa_comat_file']]
 
         generator = inputs.get(conf['input_type'])
-        eval_gen[tag] = generator( config = conf )
+        eval_gen[tag] = generator(config=conf)
 
     ######### Load Model #########
     model, model_clf, lambda_var = load_model(config)
@@ -401,6 +402,7 @@ def main(argv):
                         help='or_cmd: whether want to override config parameters by command line parameters', required=True)
 
     # optional parameters
+    parser.add_argument('--gpu_id', help='gpu_id: Specifies which gpu to use by id')
     parser.add_argument('--embed_size', help='Embed_size: number of dimensions in word embeddings.')
     parser.add_argument('--embed_path', help='Embed_path: path of embedding file.')
     parser.add_argument('--test_relation_file', help='test_relation_file: path of test relation file.')
@@ -452,6 +454,7 @@ def main(argv):
         cross_matrix = args.cross_matrix
         inter_type = args.inter_type
         test_weights_iters = args.test_weights_iters
+        gpu_id = args.gpu_id
 
         if embed_size != None:
             config['inputs']['share']['embed_size'] = int(embed_size)
@@ -491,6 +494,9 @@ def main(argv):
             config['inputs']['train']['batch_size'] = int(train_batch_size)
         if test_weights_iters != None:
             config['global']['test_weights_iters'] = int(test_weights_iters)
+
+        if gpu_id is not None and gpu_id.isdigit():
+            os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
 
     if phase == 'train':
         train(config)
