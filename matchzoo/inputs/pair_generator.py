@@ -716,11 +716,11 @@ class DMN_PairGeneratorWithIntents(PairBasicGenerator):
         X2[:] = self.fill_word
         for i in range(self.batch_size * 2):
             d1, d2p, d2n = random.choice(self.pair_list)
-            intents_index = int(d1[1:]) * self.samples_per_context
+            intents_index = (int(d1[1:]) - 1) * self.samples_per_context
 
             while self.intents[intents_index] == 0:
                 d1, d2p, d2n = random.choice(self.pair_list)
-                intents_index = int(d1[1:]) * self.samples_per_context
+                intents_index = (int(d1[1:]) - 1) * self.samples_per_context
 
             Y[i, self.intents[intents_index]] = 1
 
