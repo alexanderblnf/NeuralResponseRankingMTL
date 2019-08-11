@@ -133,7 +133,7 @@ class Preparation(object):
             f.close()
         return corpus, rels_train, rels_valid, rels_test
 
-    def run_with_train_valid_test_corpus_dmn(self, train_file, valid_file, test_file):
+    def run_with_train_valid_test_corpus_dmn(self, train_file, valid_file, test_file, intents_files=[]):
         '''
         Run with pre-splited train_file, valid_file, test_file for dmn model for conversation response ranking
         The input format should be label \t text1 (conversation context utterances seperated by \t) \t text2
@@ -144,26 +144,36 @@ class Preparation(object):
         :param train_file: train file
         :param valid_file: valid file
         :param test_file: test file
+        :param intents_files: Whether to create a file with added_intents as well
         :return: corpus, rels_train, rels_valid, rels_test
         '''
         hashid = {}
         corpus = {}
         rels = []
+        rels_intents = []
         rels_train = []
+        rels_train_intents = []
         rels_valid = []
+        rels_valid_intents = []
         rels_test = []
+        rels_test_intents = []
         # merge corpus files, but return rels for train/valid/test seperately
         curQ = 'init'
         curQid = 0
-        for file_path in list([train_file, valid_file, test_file]):
+        for file_index, file_path in enumerate(list([train_file, valid_file, test_file])):
             if file_path == train_file:
                 rels = rels_train
+                rels_intents = rels_train_intents
             elif file_path == valid_file:
                 rels = rels_valid
+                rels_intents = rels_valid_intents
             if file_path == test_file:
                 rels = rels_test
+                rels_intents = rels_test_intents
             f = open(file_path, 'r')
-            for line in f:
+            intents = [int(line) for line in open(intents_files[file_index], 'r')] if intents_files else None
+
+            for line_index, line in enumerate(f):
                 line = line.decode('utf8')
                 line = line.strip()
                 subs = self.parse_line_dmn(line)
@@ -180,11 +190,16 @@ class Preparation(object):
                     curQid += 1
                     id1 = 'Q' + str(curQid)
                     curQ = t1
+
                 corpus[id1] = t1
                 corpus[id2] = t2
                 rels.append((label, id1, id2))
+
+                if intents:
+                    rels_intents.append((label, id1, id2, intents[line_index]))
+
             f.close()
-        return corpus, rels_train, rels_valid, rels_test
+        return corpus, rels_train, rels_valid, rels_test, [rels_train_intents, rels_valid_intents, rels_test_intents]
 
     @staticmethod
     def save_corpus(file_path, corpus):
@@ -211,6 +226,13 @@ class Preparation(object):
         f = open(file_path, 'w')
         for rel in relations:
             f.write('%s %s %s\n' % (rel))
+        f.close()
+
+    @staticmethod
+    def save_relation_intents(file_path, relations_intents):
+        f = open(file_path, 'w')
+        for rel in relations_intents:
+            f.write('%s %s %s %s\n' % (rel))
         f.close()
 
     @staticmethod

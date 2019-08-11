@@ -4,6 +4,7 @@ import sys
 import random
 import numpy as np
 from utils.rank_io import *
+# from matchzoo.utils.rank_io import *
 from layers import DynamicMaxPooling
 import scipy.sparse as sp
 
@@ -12,15 +13,23 @@ class PairBasicGenerator(object):
         self.__name = 'PairBasicGenerator'
         self.config = config
         rel_file = config['relation_file']
-        self.rel = read_relation(filename=rel_file)
+        use_intents = config['use_intents'] if 'use_intents' in config else False
+
+        if use_intents:
+            self.rel = read_relation_with_intents(filename=rel_file)
+        else:
+            self.rel = read_relation(filename=rel_file)
+
         self.batch_size = config['batch_size']
         self.check_list = ['relation_file', 'batch_size']
         self.point = 0
+
         if config['use_iter']:
             self.pair_list_iter = self.make_pair_iter(self.rel)
             self.pair_list = []
         else:
-            self.pair_list = self.make_pair_static(self.rel)
+            self.pair_list = self.make_pair_static_with_intents(self.rel) \
+                if use_intents else self.make_pair_static(self.rel)
             self.pair_list_iter = None
 
     def check(self):
@@ -29,6 +38,7 @@ class PairBasicGenerator(object):
                 print '[%s] Error %s not in config' % (self.__name, e)
                 return False
         return True
+
     def make_pair_static(self, rel):
         rel_set = {}
         pair_list = []
@@ -45,6 +55,30 @@ class PairBasicGenerator(object):
                     for high_d2 in rel_set[d1][high_label]:
                         for low_d2 in rel_set[d1][low_label]:
                             pair_list.append( (d1, high_d2, low_d2) )
+        print 'Pair Instance Count:', len(pair_list)
+        return pair_list
+
+    def make_pair_static_with_intents(self, rel):
+        rel_set = {}
+        intent_set = {}
+        pair_list = []
+        for label, d1, d2, intent in rel:
+            if d1 not in intent_set:
+                intent_set[d1] = intent
+            if d1 not in rel_set:
+                rel_set[d1] = {}
+            if label not in rel_set[d1]:
+                rel_set[d1][label] = []
+            rel_set[d1][label].append(d2)
+
+        for d1 in rel_set:
+            label_list = sorted(rel_set[d1].keys(), reverse=True)
+            for hidx, high_label in enumerate(label_list[:-1]):
+                for low_label in label_list[hidx + 1:]:
+                    for high_d2 in rel_set[d1][high_label]:
+                        for low_d2 in rel_set[d1][low_label]:
+                            pair_list.append((d1, high_d2, low_d2, intent_set[d1]))
+
         print 'Pair Instance Count:', len(pair_list)
         return pair_list
 
@@ -684,7 +718,6 @@ class DMN_PairGeneratorWithIntents(PairBasicGenerator):
         self.data2_maxlen = config['text2_maxlen']
         self.fill_word = config['vocab_size'] - 1
         self.check_list.extend(['data1', 'data2', 'text1_maxlen', 'text2_maxlen', 'text1_max_utt_num'])
-        self.intents = self.get_intents(config['intents_file'])
         self.max_intent = config['max_intent']
         self.samples_per_context = config['samples_per_context']
         if config['use_iter']:
@@ -695,15 +728,15 @@ class DMN_PairGeneratorWithIntents(PairBasicGenerator):
 
         print '[DMN_PairGeneratorWithIntents] init done'
 
-    def get_intents(self, intents_file):
-        intents = []
-        with open(intents_file) as fp:
-            line = fp.readline()
-            while line:
-                intents.append(int(line[0]))
-                line = fp.readline()
-
-        return intents
+    # def get_intents(self, intents_file):
+    #     intents = []
+    #     with open(intents_file) as fp:
+    #         line = fp.readline()
+    #         while line:
+    #             intents.append(int(line[0]))
+    #             line = fp.readline()
+    #
+    #     return intents
 
     def get_batch_static(self):
         X1 = np.zeros((self.batch_size * 2, self.data1_max_utt_num, self.data1_maxlen), dtype=np.int32)  # max 10 turns
@@ -715,14 +748,12 @@ class DMN_PairGeneratorWithIntents(PairBasicGenerator):
         X1[:] = self.fill_word # the default word index is the last word, which is the added PAD word
         X2[:] = self.fill_word
         for i in range(self.batch_size * 2):
-            d1, d2p, d2n = random.choice(self.pair_list)
-            intents_index = (int(d1[1:]) - 1) * self.samples_per_context
+            d1, d2p, d2n, intent = random.choice(self.pair_list)
 
-            while self.intents[intents_index] == 0:
-                d1, d2p, d2n = random.choice(self.pair_list)
-                intents_index = (int(d1[1:]) - 1) * self.samples_per_context
+            while intent == 0:
+                d1, d2p, d2n, intent = random.choice(self.pair_list)
 
-            Y[i, self.intents[intents_index]] = 1
+            Y[i, intent] = 1
 
             if len(self.data2[d2p]) == 0:
                 d2p_ws = [self.fill_word]

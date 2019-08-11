@@ -48,6 +48,16 @@ def read_relation(filename, verbose=True):
         print '[%s]\n\tInstance size: %s' % (filename, len(data))
     return data
 
+# Read Relation Data
+def read_relation_with_intents(filename, verbose=True):
+    data = []
+    for line in open(filename):
+        line = line.strip().split()
+        data.append((int(line[0]), line[1], line[2], int(line[3])))
+    if verbose:
+        print '[%s]\n\tInstance size: %s' % (filename, len(data))
+    return data
+
 # Read varied-length features without id
 def read_features_without_id(filename, verbose=True):
     features = []
