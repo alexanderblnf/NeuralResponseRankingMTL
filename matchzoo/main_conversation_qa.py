@@ -24,6 +24,9 @@ from losses import *
 import os
 
 
+def custom_loss(y_true, y_pred):
+    return categorical_crossentropy(y_true, y_pred)
+
 def load_model(config):
     global_conf = config["global"]
     model_type = global_conf['model_type']
@@ -131,7 +134,15 @@ def train(config):
         eval_gen[tag] = generator(config=conf)
 
     ######### Load Model #########
-    model, model_clf, lambda_var = load_model(config)
+    model = None
+    model_clf = None
+
+    if config['net_name'] == 'DMN_CNN_MTL':
+        model, model_clf = load_model(config)
+        model_clf.compile(optimizer=optimizer, loss=custom_loss)
+        print '[Model] Intent classifier model Compile Done.'
+    else:
+        model = load_model(config)
 
     loss = []
     for lobj in config['losses']:
@@ -150,12 +161,6 @@ def train(config):
             eval_metrics[mobj] = metrics.get(mobj)
     model.compile(optimizer=optimizer, loss=loss)
     print '[Model] Model Compile Done.'
-
-    def custom_loss(y_true, y_pred):
-        return categorical_crossentropy(y_true, y_pred)
-
-    model_clf.compile(optimizer=optimizer, loss=custom_loss)
-    print '[Model] Intent classifier model Compile Done.'
 
     if share_input_conf['predict'] == 'False':
         if 'test' in eval_gen:
@@ -178,54 +183,23 @@ def train(config):
 
         print('Iteration ' + str(i_e) + '/' + str(num_iters))
 
-        if alternate_per_batch and share_input_conf["domain_training_type"] == "DMN-MTL":
-            for i in range(display_interval):
-                for tag, generator in train_gen.items():
-                    genfun = generator.get_batch_generator()
-                    print '[%s]\t[Train:%s]' % (time.strftime('%m-%d-%Y %H:%M:%S', time.localtime(time.time())), tag),
-                    # print('Train ' + tag)
-                    if tag == "train_clf":
-                        correct_model = model_clf
-                        p = float(i_e) / num_iters
-                        if 'l' in share_input_conf:
-                            l = share_input_conf['l']
-                        else:
-                            l = 2. / (1. + np.exp(-10. * p)) - 1
-                        K.set_value(lambda_var, K.cast_to_floatx(l))
-                    elif tag == "train":
-                        correct_model = model
-                    history = correct_model.fit_generator(
-                        genfun,
-                        steps_per_epoch=1,
-                        epochs=1,
-                        shuffle=False,
-                        verbose=0
-                    )  # callbacks=[eval_map])
-                    if i == (display_interval - 1):
-                        print ("Iter : " + str(i_e) + " loss=" + str(history.history['loss'][0]))
-        else:
-            for tag, generator in train_gen.items():
-                genfun = generator.get_batch_generator()
-                print '[%s]\t[Train:%s]' % (time.strftime('%m-%d-%Y %H:%M:%S', time.localtime(time.time())), tag),
+        for tag, generator in train_gen.items():
+            genfun = generator.get_batch_generator()
+            print '[%s]\t[Train:%s]' % (time.strftime('%m-%d-%Y %H:%M:%S', time.localtime(time.time())), tag),
 
-                if tag == "train_clf":
-                    correct_model = model_clf
-                    p = float(i_e) / num_iters
-                    if 'l' in share_input_conf:
-                        l = share_input_conf['l']
-                    else:
-                        l = 2. / (1. + np.exp(-10. * p)) - 1
-                    K.set_value(lambda_var, K.cast_to_floatx(l))
-                elif tag == "train":
-                    correct_model = model
-                history = correct_model.fit_generator(
-                    genfun,
-                    steps_per_epoch=display_interval,  # if display_interval = 10, then there are 10 batches in 1 epoch
-                    epochs=1,
-                    shuffle=False,
-                    verbose=0)
+            if tag == "train_clf":
+                correct_model = model_clf
+            elif tag == "train":
+                correct_model = model
 
-                print 'Iter:%d\tloss=%.6f' % (i_e, history.history['loss'][0])
+            history = correct_model.fit_generator(
+                genfun,
+                steps_per_epoch=display_interval,  # if display_interval = 10, then there are 10 batches in 1 epoch
+                epochs=1,
+                shuffle=False,
+                verbose=0)
+
+            print 'Iter:%d\tloss=%.6f' % (i_e, history.history['loss'][0])
 
         if (i_e+1) % save_weights_iters == 0:
             print('Evaluating')
@@ -326,7 +300,7 @@ def predict(config):
     global_conf = config["global"]
     weights_file = str(global_conf['weights_file']) + '.' + str(global_conf['test_weights_iters'])
 
-    model, model_clf, lambda_var = load_model(config)
+    model, model_clf = load_model(config)
     model.load_weights(weights_file)
 
     eval_metrics = OrderedDict()
