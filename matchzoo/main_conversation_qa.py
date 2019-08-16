@@ -170,16 +170,13 @@ def train(config):
         if 'eval_predict_in' in eval_gen:
             del eval_gen['eval_predict_in']
 
-    alternate_per_batch = False
-    if alternate_per_batch:
-        print("training alternated batches.")
-    initial_clf_weights = model_clf.layers[-1].get_weights()
+    # initial_clf_weights = model_clf.layers[-1].get_weights()
 
     for i_e in range(num_iters):
-        if 'reset_clf_weights_iters' in share_input_conf:
-            if(i_e+1) % share_input_conf['reset_clf_weights_iters'] == 0:
-                print("Resetting clf dense layer weights.")
-                model_clf.layers[-1].set_weights(initial_clf_weights)
+        # if 'reset_clf_weights_iters' in share_input_conf:
+        #     if(i_e+1) % share_input_conf['reset_clf_weights_iters'] == 0:
+        #         print("Resetting clf dense layer weights.")
+        #         model_clf.layers[-1].set_weights(initial_clf_weights)
 
         print('Iteration ' + str(i_e) + '/' + str(num_iters))
 
