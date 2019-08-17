@@ -86,8 +86,6 @@ def train(config):
             input_eval_conf[tag].update(share_input_conf)
             input_eval_conf[tag].update(input_conf[tag])
 
-    # print '[Input] Process Input Tags. %s in TRAIN, %s in EVAL.' % (input_train_conf.keys(), input_eval_conf.keys())
-
     # collect dataset identification
     dataset = {}
     for tag in input_conf:
@@ -134,7 +132,6 @@ def train(config):
         eval_gen[tag] = generator(config=conf)
 
     ######### Load Model #########
-    model = None
     model_clf = None
 
     if config['net_name'] == 'DMN_CNN_MTL':
@@ -159,6 +156,7 @@ def train(config):
             eval_metrics[mobj] = metrics.get(mt_key)(int(mt_val))
         else:
             eval_metrics[mobj] = metrics.get(mobj)
+
     model.compile(optimizer=optimizer, loss=loss)
     print '[Model] Model Compile Done.'
 
@@ -170,16 +168,7 @@ def train(config):
         if 'eval_predict_in' in eval_gen:
             del eval_gen['eval_predict_in']
 
-    # initial_clf_weights = model_clf.layers[-1].get_weights()
-
     for i_e in range(num_iters):
-        # if 'reset_clf_weights_iters' in share_input_conf:
-        #     if(i_e+1) % share_input_conf['reset_clf_weights_iters'] == 0:
-        #         print("Resetting clf dense layer weights.")
-        #         model_clf.layers[-1].set_weights(initial_clf_weights)
-
-        print('Iteration ' + str(i_e) + '/' + str(num_iters))
-
         for tag, generator in train_gen.items():
             genfun = generator.get_batch_generator()
             print '[%s]\t[Train:%s]' % (time.strftime('%m-%d-%Y %H:%M:%S', time.localtime(time.time())), tag),
