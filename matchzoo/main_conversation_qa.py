@@ -401,6 +401,7 @@ def main(argv):
     parser.add_argument('--test_weights_iters', help='test_weights_iters: the iteration of test weights file used')
     parser.add_argument('--num_iters')
     parser.add_argument('--keras_random_seed')
+    parser.add_argument('--predict')
 
     args = parser.parse_args()
     # parse the hyper-parameters from the command lines
@@ -435,6 +436,7 @@ def main(argv):
         gpu_id = args.gpu_id
         num_iters = args.num_iters
         keras_random_seed = args.keras_random_seed
+        predict_eval = args.predict
 
         if embed_size != None:
             config['inputs']['share']['embed_size'] = int(embed_size)
@@ -481,6 +483,8 @@ def main(argv):
             random.seed(seed)
             numpy.random.seed(seed)
             tensorflow.set_random_seed(seed)
+        if predict_eval != None:
+            config['inputs']['share']['predict'] = predict_eval
 
         if gpu_id is not None and gpu_id.isdigit():
             os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
