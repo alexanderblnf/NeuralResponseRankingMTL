@@ -399,7 +399,8 @@ def main(argv):
     parser.add_argument('--cross_matrix', help='cross_matrix: parameters for model abalation')
     parser.add_argument('--inter_type', help='inter_type: parameters for model abalation')
     parser.add_argument('--test_weights_iters', help='test_weights_iters: the iteration of test weights file used')
-
+    parser.add_argument('--num_iters')
+    parser.add_argument('--keras_random_seed')
 
     args = parser.parse_args()
     # parse the hyper-parameters from the command lines
@@ -432,6 +433,8 @@ def main(argv):
         inter_type = args.inter_type
         test_weights_iters = args.test_weights_iters
         gpu_id = args.gpu_id
+        num_iters = args.num_iters
+        keras_random_seed = args.keras_random_seed
 
         if embed_size != None:
             config['inputs']['share']['embed_size'] = int(embed_size)
@@ -471,6 +474,13 @@ def main(argv):
             config['inputs']['train']['batch_size'] = int(train_batch_size)
         if test_weights_iters != None:
             config['global']['test_weights_iters'] = int(test_weights_iters)
+        if num_iters != None:
+            config['global']['num_iters'] = int(num_iters)
+        if keras_random_seed != None:
+            seed = int(keras_random_seed)
+            random.seed(seed)
+            numpy.random.seed(seed)
+            tensorflow.set_random_seed(seed)
 
         if gpu_id is not None and gpu_id.isdigit():
             os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
