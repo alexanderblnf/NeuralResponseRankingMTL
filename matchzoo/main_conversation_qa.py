@@ -134,7 +134,7 @@ def train(config):
     ######### Load Model #########
     model_clf = None
 
-    if config['net_name'] == 'DMN_CNN_MTL':
+    if config['net_name'] == 'DMN_CNN_MTL' or config['net_name'] == 'DMN_CNN_INTENTS':
         model, model_clf = load_model(config)
         model_clf.compile(optimizer=optimizer, loss=custom_loss)
         print '[Model] Intent classifier model Compile Done.'
