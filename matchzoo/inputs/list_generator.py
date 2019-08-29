@@ -793,11 +793,13 @@ class DMN_ListGeneratorWithIntents(ListBasicGenerator):
                 d1, d2_list = pt[0], pt[1]
                 #print('test d1 d2_list', d1, d2_list)
                 list_count.append(list_count[-1] + len(d2_list))
-                for l, d2 in d2_list: # 10
+                for intent, d2 in d2_list: # 10
+                    if intent == 0:
+                        continue
                     # if len(self.data1[d1]) > 10, we only keep the most recent 10 utterances
                     utt_start = 0 if len(self.data1[d1]) < self.data1_max_utt_num else (
                     len(self.data1[d1]) - self.data1_max_utt_num)
-                    for z in range(utt_start,len(self.data1[d1])):
+                    for z in range(utt_start, len(self.data1[d1])):
                         d1_ws = self.data1[d1][z].split()
                         d1_len = min(self.data1_maxlen, len(d1_ws))
                         X1[j, z-utt_start, :d1_len], X1_len[j, z-utt_start] = d1_ws[:d1_len], d1_len
@@ -809,9 +811,9 @@ class DMN_ListGeneratorWithIntents(ListBasicGenerator):
                     d2_len = min(self.data2_maxlen, len(d2_ws))
                     X2[j, :d2_len], X2_len[j] = d2_ws[:d2_len], d2_len
                     ID_pairs.append((d1, d2))
-                    index_d1 = int(d1[1:])
-                    Y[j] = self.intents[index_d1]
+                    Y[j] = intent
                     j += 1
+
             yield X1, X1_len, X2, X2_len, Y, ID_pairs, list_count
 
     def get_batch_generator(self):
