@@ -17,10 +17,11 @@ class ListBasicGenerator(object):
 
             if use_intents:
                 self.rel = read_relation_with_intents(filename=config['relation_file'])
+                self.list_list = self.make_list_with_intents(self.rel)
             else:
                 self.rel = read_relation(filename=config['relation_file'])
+                self.list_list = self.make_list(self.rel)
 
-            self.list_list = self.make_list(self.rel)
             self.num_list = len(self.list_list)
         self.check_list = []
         self.point = 0
