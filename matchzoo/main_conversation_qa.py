@@ -141,24 +141,25 @@ def train(config):
     else:
         model = load_model(config)
 
-    loss = []
-    for lobj in config['losses']:
-        if lobj['object_name'] in mz_specialized_losses:
-            loss.append(rank_losses.get(lobj['object_name'])(lobj['object_params']))
-        else:
-            loss.append(rank_losses.get(lobj['object_name']))
+    if config['net_name'] != 'DMN_CNN_INTENTS':
+        loss = []
+        for lobj in config['losses']:
+            if lobj['object_name'] in mz_specialized_losses:
+                loss.append(rank_losses.get(lobj['object_name'])(lobj['object_params']))
+            else:
+                loss.append(rank_losses.get(lobj['object_name']))
 
-    eval_metrics = OrderedDict()
-    for mobj in config['metrics']:
-        mobj = mobj.lower()
-        if '@' in mobj:
-            mt_key, mt_val = mobj.split('@', 1)
-            eval_metrics[mobj] = metrics.get(mt_key)(int(mt_val))
-        else:
-            eval_metrics[mobj] = metrics.get(mobj)
+        eval_metrics = OrderedDict()
+        for mobj in config['metrics']:
+            mobj = mobj.lower()
+            if '@' in mobj:
+                mt_key, mt_val = mobj.split('@', 1)
+                eval_metrics[mobj] = metrics.get(mt_key)(int(mt_val))
+            else:
+                eval_metrics[mobj] = metrics.get(mobj)
 
-    model.compile(optimizer=optimizer, loss=loss)
-    print '[Model] Model Compile Done.'
+        model.compile(optimizer=optimizer, loss=loss)
+        print '[Model] Model Compile Done.'
 
     if share_input_conf['predict'] == 'False':
         if 'test' in eval_gen:
@@ -194,8 +195,14 @@ def train(config):
                 print '[%s]\t[Eval:%s]' % (time.strftime('%m-%d-%Y %H:%M:%S', time.localtime(time.time())), tag),
                 res = dict([[k,0.] for k in eval_metrics.keys()])
                 num_valid = 0
+
+                if tag == "train_clf":
+                    correct_model = model_clf
+                elif tag == "train":
+                    correct_model = model
+
                 for input_data, y_true in genfun:
-                    y_pred = model.predict(input_data, batch_size=len(y_true))
+                    y_pred = correct_model.predict(input_data, batch_size=len(y_true))
                     if issubclass(type(generator), inputs.list_generator.ListBasicGenerator):
                         list_counts = input_data['list_counts']
                         for k, eval_func in eval_metrics.items():
@@ -214,7 +221,10 @@ def train(config):
         sys.stdout.flush()
 
         if (i_e+1) % save_weights_iters == 0:
-            model.save_weights(weights_file % (i_e+1))
+            if config['net_name'] != 'DMN_CNN_INTENTS':
+                model.save_weights(weights_file % (i_e+1))
+            else:
+                model_clf.save_weights(weights_file % (i_e + 1))
 
 def predict(config):
     ######## Read input config ########

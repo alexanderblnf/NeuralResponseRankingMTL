@@ -728,16 +728,6 @@ class DMN_PairGeneratorWithIntents(PairBasicGenerator):
 
         print '[DMN_PairGeneratorWithIntents] init done'
 
-    # def get_intents(self, intents_file):
-    #     intents = []
-    #     with open(intents_file) as fp:
-    #         line = fp.readline()
-    #         while line:
-    #             intents.append(int(line[0]))
-    #             line = fp.readline()
-    #
-    #     return intents
-
     def get_batch_static(self):
         X1 = np.zeros((self.batch_size * 2, self.data1_max_utt_num, self.data1_maxlen), dtype=np.int32)  # max 10 turns
         X1_len = np.zeros((self.batch_size * 2, self.data1_max_utt_num), dtype=np.int32)  # max 10 turns

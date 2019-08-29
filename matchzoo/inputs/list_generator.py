@@ -13,7 +13,13 @@ class ListBasicGenerator(object):
         self.config = config
         self.batch_list = config['batch_list']
         if 'relation_file' in config:
-            self.rel = read_relation(filename=config['relation_file'])
+            use_intents = config['use_intents'] if 'use_intents' in config else False
+
+            if use_intents:
+                self.rel = read_relation_with_intents(filename=config['relation_file'])
+            else:
+                self.rel = read_relation(filename=config['relation_file'])
+
             self.list_list = self.make_list(self.rel)
             self.num_list = len(self.list_list)
         self.check_list = []
@@ -34,6 +40,18 @@ class ListBasicGenerator(object):
             list_list[d1].append( (label, d2) )
         for d1 in list_list:
             list_list[d1] = sorted(list_list[d1], reverse = True)
+        print 'List Instance Count:', len(list_list)
+        return list_list.items()
+
+    def make_list_with_intents(self, rel):
+        list_list = {}
+        for label, d1, d2, intent in rel:
+            if d1 not in list_list:
+                list_list[d1] = []
+            list_list[d1].append((intent, d2))
+
+        for d1 in list_list:
+            list_list[d1] = sorted(list_list[d1], reverse=True)
         print 'List Instance Count:', len(list_list)
         return list_list.items()
 
@@ -361,6 +379,7 @@ class DRMM_ListGenerator(ListBasicGenerator):
     def get_batch_generator(self):
         for X1, X1_len, X2, X2_len, Y, ID_pairs, list_counts in self.get_batch():
             yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'ID': ID_pairs, 'list_counts': list_counts}, Y)
+
     def get_all_data(self):
         x1_ls, x1_len_ls, x2_ls, x2_len_ls, y_ls, list_count_ls = [], [], [], [], [], []
         while self.point < self.num_list:
@@ -440,7 +459,6 @@ class DMN_ListGenerator(ListBasicGenerator):
             #print ('test len(currbatch): ', len(currbatch))
             for pt in currbatch: # 50
                 d1, d2_list = pt[0], pt[1]
-                #print('test d1 d2_list', d1, d2_list)
                 list_count.append(list_count[-1] + len(d2_list))
                 for l, d2 in d2_list: # 10
                     # if len(self.data1[d1]) > 10, we only keep the most recent 10 utterances
@@ -739,24 +757,13 @@ class DMN_ListGeneratorWithIntents(ListBasicGenerator):
         self.data1_maxlen = config['text1_maxlen']
         self.data1_max_utt_num = int(config['text1_max_utt_num'])
         self.data2_maxlen = config['text2_maxlen']
-        self.intents = self.get_intents(config['intents_file'])
         self.max_intent = config['max_intent']
         self.fill_word = config['vocab_size'] - 1
         self.embed = config['embed']
         self.check_list.extend(['data1', 'data2', 'text1_maxlen', 'text2_maxlen', 'embed', 'text1_max_utt_num'])
         if not self.check():
-            raise TypeError('[DMN_ListGenerator] parameter check wrong.')
-        print '[DMN_ListGenerator] init done, list number: %d. ' % (self.num_list)
-
-    def get_intents(self, intents_file):
-        intents = []
-        with open(intents_file) as fp:
-            line = fp.readline()
-            while line:
-                intents.append(int(line[0]))
-                line = fp.readline()
-
-        return intents
+            raise TypeError('[DMN_ListGeneratorWithIntents] parameter check wrong.')
+        print '[DMN_ListGeneratorWithIntents] init done, list number: %d. ' % (self.num_list)
 
     def get_batch(self):
         while self.point < self.num_list:
@@ -780,8 +787,7 @@ class DMN_ListGeneratorWithIntents(ListBasicGenerator):
             X1[:] = self.fill_word
             X2[:] = self.fill_word
             j = 0
-            #print ('test currbatch: ', currbatch)
-            #print ('test len(currbatch): ', len(currbatch))
+
             for pt in currbatch: # 50
                 d1, d2_list = pt[0], pt[1]
                 #print('test d1 d2_list', d1, d2_list)
