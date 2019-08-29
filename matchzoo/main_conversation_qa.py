@@ -141,6 +141,15 @@ def train(config):
     else:
         model = load_model(config)
 
+    eval_metrics = OrderedDict()
+    for mobj in config['metrics']:
+        mobj = mobj.lower()
+        if '@' in mobj:
+            mt_key, mt_val = mobj.split('@', 1)
+            eval_metrics[mobj] = metrics.get(mt_key)(int(mt_val))
+        else:
+            eval_metrics[mobj] = metrics.get(mobj)
+
     if config['net_name'] != 'DMN_CNN_INTENTS':
         loss = []
         for lobj in config['losses']:
@@ -148,15 +157,6 @@ def train(config):
                 loss.append(rank_losses.get(lobj['object_name'])(lobj['object_params']))
             else:
                 loss.append(rank_losses.get(lobj['object_name']))
-
-        eval_metrics = OrderedDict()
-        for mobj in config['metrics']:
-            mobj = mobj.lower()
-            if '@' in mobj:
-                mt_key, mt_val = mobj.split('@', 1)
-                eval_metrics[mobj] = metrics.get(mt_key)(int(mt_val))
-            else:
-                eval_metrics[mobj] = metrics.get(mobj)
 
         model.compile(optimizer=optimizer, loss=loss)
         print '[Model] Model Compile Done.'
@@ -171,7 +171,6 @@ def train(config):
 
     for i_e in range(num_iters):
         for tag, generator in train_gen.items():
-            print('Training...')
             genfun = generator.get_batch_generator()
             print '[%s]\t[Train:%s]' % (time.strftime('%m-%d-%Y %H:%M:%S', time.localtime(time.time())), tag),
 
