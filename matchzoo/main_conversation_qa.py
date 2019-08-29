@@ -171,6 +171,7 @@ def train(config):
 
     for i_e in range(num_iters):
         for tag, generator in train_gen.items():
+            print('Training...')
             genfun = generator.get_batch_generator()
             print '[%s]\t[Train:%s]' % (time.strftime('%m-%d-%Y %H:%M:%S', time.localtime(time.time())), tag),
 
@@ -189,7 +190,7 @@ def train(config):
             print 'Iter:%d\tloss=%.6f' % (i_e, history.history['loss'][0])
 
         if (i_e+1) % save_weights_iters == 0:
-            print('Evaluating')
+            print('Evaluating...')
             for tag, generator in eval_gen.items():
                 genfun = generator.get_batch_generator()
                 print '[%s]\t[Eval:%s]' % (time.strftime('%m-%d-%Y %H:%M:%S', time.localtime(time.time())), tag),
