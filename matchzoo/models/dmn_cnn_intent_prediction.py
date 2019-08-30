@@ -86,8 +86,12 @@ class DMN_CNN_MTL_IntentPrediction(BasicModel):
 
             query_bigru_reps.append(q_rep)
 
-        final_q_rep = Flatten()([query_bigru_reps[-1]])
-        out_clf = Dense(self.config['max_intent'], activation='softmax')(final_q_rep)
+        # final_q_rep = Flatten()([query_bigru_reps[-1]])
+        word_embed_rep = Flatten()([query_embeddings[-1]])
+        word_bigru_rep = Flatten()([query_bigru_reps[-1]])
+        q_d_rep = concatenate([word_embed_rep, word_bigru_rep])
+
+        out_clf = Dense(self.config['max_intent'], activation='softmax')(q_d_rep)
         model_clf = Model(inputs=query, outputs=out_clf)
 
         return model_clf
