@@ -74,12 +74,15 @@ class DMN_CNN_MTL_IntentPrediction(BasicModel):
 
         # Transform current utterance in embedding
         q_embed = embedding(query_cur_utt)
-        # show_layer_info('Query Embedding', q_embed)
+        show_layer_info('Query Embedding', q_embed)
 
         q_rep = Bidirectional(
             GRU(self.config['hidden_size'], return_sequences=True, dropout=self.config['dropout_rate']))(q_embed)
 
+        show_layer_info('Query BIGRU representation', q_rep)
+
         final_q_rep = Flatten()([q_rep])
+        show_layer_info('Final representation', final_q_rep)
 
         out_clf = Dense(self.config['max_intent'], activation='softmax')(final_q_rep)
         model_clf = Model(inputs=query, outputs=out_clf)
