@@ -81,7 +81,7 @@ class DMN_CNN_MTL_IntentPrediction(BasicModel):
 
         show_layer_info('Query BIGRU representation', q_rep)
 
-        final_q_rep = Flatten()([q_rep])
+        final_q_rep = Flatten()(q_rep)
         show_layer_info('Final representation', final_q_rep)
 
         out_clf = Dense(self.config['max_intent'], activation='softmax')(final_q_rep)
