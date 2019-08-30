@@ -835,7 +835,7 @@ class DMN_PairGeneratorOnlyIntents(PairBasicGenerator):
             d1_len = min(self.data1_maxlen, len(d1_ws))
             X1[i, 0, :d1_len], X1_len[i, 0] = d1_ws[:d1_len], d1_len
 
-        return X1, X1_len
+        return X1, X1_len, Y
 
     def get_batch_iter(self):
         while True:
@@ -864,8 +864,5 @@ class DMN_PairGeneratorOnlyIntents(PairBasicGenerator):
 
     def get_batch_generator(self):
         while True:
-            X1, X1_len, X2, X2_len, Y = self.get_batch()
-            if self.config['use_dpool']:
-                yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'dpool_index': DynamicMaxPooling.dynamic_pooling_index(X1_len, X2_len, self.config['text1_maxlen'], self.config['text2_maxlen'])}, Y)
-            else:
-                yield ({'query': X1, 'query_len': X1_len}, Y)
+            X1, X1_len, Y = self.get_batch()
+            yield ({'query': X1, 'query_len': X1_len}, Y)
