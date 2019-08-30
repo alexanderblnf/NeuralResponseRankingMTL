@@ -132,12 +132,15 @@ def train(config):
         eval_gen[tag] = generator(config=conf)
 
     ######### Load Model #########
-    model_clf = None
 
-    if config['net_name'] == 'DMN_CNN_MTL' or config['net_name'] == 'DMN_CNN_INTENTS':
+    if config['net_name'] == 'DMN_CNN_MTL':
         model, model_clf = load_model(config)
         model_clf.compile(optimizer=optimizer, loss=custom_loss)
         print '[Model] Intent classifier model Compile Done.'
+    elif config['net_name'] == 'DMN_CNN_INTENTS':
+        model_clf = load_model(config)
+        model_clf.compile(optimizer=optimizer, loss=custom_loss)
+        print '[Model] Intent Only classifier model Compile Done.'
     else:
         model = load_model(config)
 
