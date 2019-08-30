@@ -86,7 +86,7 @@ class DMN_CNN_MTL_IntentPrediction(BasicModel):
 
             query_bigru_reps.append(q_rep)
 
-        out_clf = Dense(self.config['max_intent'], activation='softmax')(query_bigru_reps[-1])
+        out_clf = Dense(self.config['max_intent'], activation='softmax')([query_bigru_reps[-1]])
         model_clf = Model(inputs=query, outputs=out_clf)
 
         return model_clf
