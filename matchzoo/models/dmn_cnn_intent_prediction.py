@@ -62,36 +62,26 @@ class DMN_CNN_MTL_IntentPrediction(BasicModel):
         def stack(x):
             return K.tf.stack([xx for xx in x], axis=1)
 
-        query = Input(name='query', shape=(self.config['text1_max_utt_num'], self.config['text1_maxlen'],))
-        # show_layer_info('Input query', query)
+        query = Input(name='query', shape=(1, self.config['text1_maxlen'],))
+        show_layer_info('Input query', query)
         # show_layer_info('Input doc', doc)
 
         embedding = Embedding(self.config['vocab_size'], self.config['embed_size'], weights=[self.config['embed']], trainable = self.embed_trainable)
 
-        query_embeddings = []
-        query_bigru_reps = []
+        self.i = 0
+        query_cur_utt = Lambda(slice_reshape)(query)
+        show_layer_info('query_cur_utt', query_cur_utt)
 
-        for i in range(self.config['text1_max_utt_num']):
-            self.i = i
-            query_cur_utt = Lambda(slice_reshape)(query)
-            show_layer_info('query_cur_utt', query_cur_utt)
+        # Transform current utterance in embedding
+        q_embed = embedding(query_cur_utt)
+        # show_layer_info('Query Embedding', q_embed)
 
-            # Transform current utterance in embedding
-            q_embed = embedding(query_cur_utt)
-            query_embeddings.append(q_embed)
-            # show_layer_info('Query Embedding', q_embed)
+        q_rep = Bidirectional(
+            GRU(self.config['hidden_size'], return_sequences=True, dropout=self.config['dropout_rate']))(q_embed)
 
-            q_rep = Bidirectional(
-                GRU(self.config['hidden_size'], return_sequences=True, dropout=self.config['dropout_rate']))(q_embed)
+        final_q_rep = Flatten()([q_rep])
 
-            query_bigru_reps.append(q_rep)
-
-        # final_q_rep = Flatten()([query_bigru_reps[-1]])
-        word_embed_rep = Flatten()([query_embeddings[-1]])
-        word_bigru_rep = Flatten()([query_bigru_reps[-1]])
-        q_d_rep = concatenate([word_embed_rep, word_bigru_rep])
-
-        out_clf = Dense(self.config['max_intent'], activation='softmax')(q_d_rep)
+        out_clf = Dense(self.config['max_intent'], activation='softmax')(final_q_rep)
         model_clf = Model(inputs=query, outputs=out_clf)
 
         return model_clf

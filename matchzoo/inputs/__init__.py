@@ -13,6 +13,7 @@ from pair_generator import PairGenerator_Feats
 from pair_generator import DMN_PairGenerator
 from pair_generator import DMN_KD_PairGenerator
 from pair_generator import DMN_PairGeneratorWithIntents
+from pair_generator import DMN_PairGeneratorOnlyIntents
 
 from list_generator import ListGenerator
 from list_generator import Triletter_ListGenerator

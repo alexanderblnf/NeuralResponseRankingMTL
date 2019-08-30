@@ -794,3 +794,78 @@ class DMN_PairGeneratorWithIntents(PairBasicGenerator):
                 yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'dpool_index': DynamicMaxPooling.dynamic_pooling_index(X1_len, X2_len, self.config['text1_maxlen'], self.config['text2_maxlen'])}, Y)
             else:
                 yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len}, Y)
+
+class DMN_PairGeneratorOnlyIntents(PairBasicGenerator):
+    def __init__(self, config):
+        super(DMN_PairGeneratorOnlyIntents, self).__init__(config=config)
+        self.__name = 'DMN_PairGeneratorOnlyIntents'
+        self.config = config
+        self.data1 = config['data1']
+        self.data2 = config['data2']
+        self.data1_maxlen = config['text1_maxlen']
+        self.data1_max_utt_num = int(config['text1_max_utt_num'])
+        self.data2_maxlen = config['text2_maxlen']
+        self.fill_word = config['vocab_size'] - 1
+        self.check_list.extend(['data1', 'data2', 'text1_maxlen', 'text2_maxlen', 'text1_max_utt_num'])
+        self.max_intent = config['max_intent']
+        self.samples_per_context = config['samples_per_context']
+        if config['use_iter']:
+            self.batch_iter = self.get_batch_iter()
+
+        if not self.check():
+            raise TypeError('[DMN_PairGeneratorOnlyIntents] parameter check wrong.')
+
+        print '[DMN_PairGeneratorOnlyIntents] init done'
+
+    def get_batch_static(self):
+        X1 = np.zeros((self.batch_size * 2, 1, self.data1_maxlen), dtype=np.int32)  # max 10 turns
+        X1_len = np.zeros((self.batch_size * 2, 1), dtype=np.int32)  # max 10 turns
+        Y = np.zeros((self.batch_size * 2, self.max_intent), dtype=np.int32)
+
+        # X1[:] = self.fill_word # the default word index is the last word, which is the added PAD word
+        for i in range(self.batch_size * 2):
+            d1, d2p, d2n, intent = random.choice(self.pair_list)
+
+            while intent == 0:
+                d1, d2p, d2n, intent = random.choice(self.pair_list)
+
+            Y[i, intent] = 1
+
+            d1_ws = self.data1[d1][len(self.data1[d1]) - 1].split()
+            d1_len = min(self.data1_maxlen, len(d1_ws))
+            X1[i, 0, :d1_len], X1_len[i, 0] = d1_ws[:d1_len], d1_len
+
+        return X1, X1_len
+
+    def get_batch_iter(self):
+        while True:
+            self.pair_list = self.pair_list_iter.next()
+            for _ in range(self.config['batch_per_iter']):
+                X1 = np.zeros((self.batch_size*2, self.data1_maxlen), dtype=np.int32)
+                X1_len = np.zeros((self.batch_size*2,), dtype=np.int32)
+                X2 = np.zeros((self.batch_size*2, self.data2_maxlen), dtype=np.int32)
+                X2_len = np.zeros((self.batch_size*2,), dtype=np.int32)
+                Y = np.zeros((self.batch_size*2,), dtype=np.int32)
+
+                Y[::2] = 1
+                X1[:] = self.fill_word
+                X2[:] = self.fill_word
+                for i in range(self.batch_size):
+                    d1, d2p, d2n = random.choice(self.pair_list)
+                    d1_len = min(self.data1_maxlen, len(self.data1[d1]))
+                    d2p_len = min(self.data2_maxlen, len(self.data2[d2p]))
+                    d2n_len = min(self.data2_maxlen, len(self.data2[d2n]))
+                    X1[i*2,   :d1_len],  X1_len[i*2]   = self.data1[d1][:d1_len],   d1_len
+                    X2[i*2,   :d2p_len], X2_len[i*2]   = self.data2[d2p][:d2p_len], d2p_len
+                    X1[i*2+1, :d1_len],  X1_len[i*2+1] = self.data1[d1][:d1_len],   d1_len
+                    X2[i*2+1, :d2n_len], X2_len[i*2+1] = self.data2[d2n][:d2n_len], d2n_len
+
+                yield X1, X1_len, X2, X2_len, Y
+
+    def get_batch_generator(self):
+        while True:
+            X1, X1_len, X2, X2_len, Y = self.get_batch()
+            if self.config['use_dpool']:
+                yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'dpool_index': DynamicMaxPooling.dynamic_pooling_index(X1_len, X2_len, self.config['text1_maxlen'], self.config['text2_maxlen'])}, Y)
+            else:
+                yield ({'query': X1, 'query_len': X1_len}, Y)
