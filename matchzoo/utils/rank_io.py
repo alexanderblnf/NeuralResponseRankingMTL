@@ -48,12 +48,21 @@ def read_relation(filename, verbose=True):
         print '[%s]\n\tInstance size: %s' % (filename, len(data))
     return data
 
-# Read Relation Data
+# Read Relation Data With Intents (for MTL)
 def read_relation_with_intents(filename, verbose=True):
     data = []
     for line in open(filename):
         line = line.strip().split()
         data.append((int(line[0]), line[1], line[2], int(line[3])))
+    if verbose:
+        print '[%s]\n\tInstance size: %s' % (filename, len(data))
+    return data
+
+def read_relation_only_intents(filename, verbose=True):
+    data = []
+    for line in open(filename):
+        line = line.strip().split()
+        data.append((int(line[0]), line[1], line[2]))
     if verbose:
         print '[%s]\n\tInstance size: %s' % (filename, len(data))
     return data

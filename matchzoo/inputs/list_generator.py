@@ -14,10 +14,13 @@ class ListBasicGenerator(object):
         self.batch_list = config['batch_list']
         if 'relation_file' in config:
             use_intents = config['use_intents'] if 'use_intents' in config else False
+            only_intents = config['only_intents'] if 'only_intents' in config else False
 
             if use_intents:
-                self.rel = read_relation_with_intents(filename=config['relation_file'])
-                self.list_list = self.make_list_with_intents(self.rel)
+                self.rel = read_relation_only_intents(filename=rel_file) if only_intents \
+                    else read_relation_with_intents(filename=rel_file)
+                self.list_list = self.make_list_only_intents(self.rel) if only_intents \
+                    else self.make_list_with_intents(self.rel)
             else:
                 self.rel = read_relation(filename=config['relation_file'])
                 self.list_list = self.make_list(self.rel)
@@ -50,6 +53,18 @@ class ListBasicGenerator(object):
             if d1 not in list_list:
                 list_list[d1] = []
             list_list[d1].append((intent, d2))
+
+        for d1 in list_list:
+            list_list[d1] = sorted(list_list[d1], reverse=True)
+        print 'List Instance Count:', len(list_list)
+        return list_list.items()
+
+    def make_list_only_intents(self, rel):
+        list_list = {}
+        for intent, d1, placeholder in rel:
+            if d1 not in list_list:
+                list_list[d1] = []
+            list_list[d1].append(intent)
 
         for d1 in list_list:
             list_list[d1] = sorted(list_list[d1], reverse=True)
@@ -823,3 +838,57 @@ class DMN_ListGeneratorWithIntents(ListBasicGenerator):
             else:
                 yield ({'query': X1, 'query_len': X1_len, 'doc': X2, 'doc_len': X2_len, 'ID': ID_pairs, 'list_counts': list_counts}, Y)
 
+class DMN_ListGeneratorOnlyIntents(ListBasicGenerator):
+    def __init__(self, config={}):
+        super(DMN_ListGeneratorOnlyIntents, self).__init__(config=config)
+        self.data1 = config['data1']
+        self.data2 = config['data2']
+        self.data1_maxlen = config['text1_maxlen']
+        self.data1_max_utt_num = int(config['text1_max_utt_num'])
+        self.data2_maxlen = config['text2_maxlen']
+        self.max_intent = config['max_intent']
+        self.fill_word = config['vocab_size'] - 1
+        self.embed = config['embed']
+        self.check_list.extend(['data1', 'data2', 'text1_maxlen', 'text2_maxlen', 'embed', 'text1_max_utt_num'])
+        if not self.check():
+            raise TypeError('[DMN_ListGeneratorOnlyIntents] parameter check wrong.')
+        print '[DMN_ListGeneratorOnlyIntents] init done, list number: %d. ' % (self.num_list)
+
+    def get_batch(self):
+        while self.point < self.num_list:
+            currbatch = []
+            if self.point + self.batch_list <= self.num_list:
+                currbatch = self.list_list[self.point: self.point+self.batch_list]
+                self.point += self.batch_list
+            else:
+                currbatch = self.list_list[self.point:]
+                self.point = self.num_list
+
+            bsize = sum([len(pt[1]) for pt in currbatch]) # 50 * 10 = 500
+            #print ('test bsize: ', bsize)
+            ID_pairs = []
+            list_count = [0]
+            X1 = np.zeros((bsize, 1, self.data1_maxlen), dtype=np.int32)
+            X1_len = np.zeros((bsize, 1), dtype=np.int32)
+            Y = np.zeros((bsize,), dtype=np.int32)
+            X1[:] = self.fill_word
+            j = 0
+
+            for pt in currbatch: # 50
+                d1, intent_list = pt[0], pt[1]
+                list_count.append(list_count[-1] + len(intent_list))
+                for intent in intent_list: # 10
+                    # if len(self.data1[d1]) > 10, we only keep the most recent 10 utterances
+                    d1_ws = self.data1[d1][len(self.data1[d1]) - 1].split()
+                    d1_len = min(self.data1_maxlen, len(d1_ws))
+                    X1[j, 0, :d1_len], X1_len[j, 0] = d1_ws[:d1_len], d1_len
+
+                    ID_pairs.append((d1, intent))
+                    Y[j] = intent
+                    j += 1
+
+            yield X1, X1_len, Y, ID_pairs, list_count
+
+    def get_batch_generator(self):
+        for X1, X1_len, Y, ID_pairs, list_counts in self.get_batch():
+            yield ({'query': X1, 'query_len': X1_len, 'ID': ID_pairs, 'list_counts': list_counts}, Y)

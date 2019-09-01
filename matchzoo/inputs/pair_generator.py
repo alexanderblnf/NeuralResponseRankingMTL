@@ -14,9 +14,11 @@ class PairBasicGenerator(object):
         self.config = config
         rel_file = config['relation_file']
         use_intents = config['use_intents'] if 'use_intents' in config else False
+        only_intents = config['only_intents'] if 'only_intents' in config else False
 
         if use_intents:
-            self.rel = read_relation_with_intents(filename=rel_file)
+            self.rel = read_relation_only_intents(filename=rel_file) if only_intents \
+                else read_relation_with_intents(filename=rel_file)
         else:
             self.rel = read_relation(filename=rel_file)
 
@@ -28,8 +30,12 @@ class PairBasicGenerator(object):
             self.pair_list_iter = self.make_pair_iter(self.rel)
             self.pair_list = []
         else:
-            self.pair_list = self.make_pair_static_with_intents(self.rel) \
-                if use_intents else self.make_pair_static(self.rel)
+            if use_intents:
+                self.pair_list = self.make_pair_static_only_intents(self.rel) if only_intents \
+                    else self.make_pair_static_with_intents(self.rel)
+            else:
+                self.pair_list = self.make_pair_static(self.rel)
+
             self.pair_list_iter = None
 
     def check(self):
@@ -78,6 +84,21 @@ class PairBasicGenerator(object):
                     for high_d2 in rel_set[d1][high_label]:
                         for low_d2 in rel_set[d1][low_label]:
                             pair_list.append((d1, high_d2, low_d2, intent_set[d1]))
+
+        print 'Pair Instance Count:', len(pair_list)
+        return pair_list
+
+    def make_pair_static_only_intents(self, rel):
+        rel_set = {}
+        pair_list = []
+        for intent, d1, placeholder in rel:
+            if d1 not in rel_set:
+                rel_set[d1] = []
+            rel_set[d1].append(intent)
+
+        for d1 in rel_set:
+            for intent in rel_set[d1]:
+                pair_list.append((d1, intent))
 
         print 'Pair Instance Count:', len(pair_list)
         return pair_list
@@ -824,10 +845,7 @@ class DMN_PairGeneratorOnlyIntents(PairBasicGenerator):
 
         # X1[:] = self.fill_word # the default word index is the last word, which is the added PAD word
         for i in range(self.batch_size * 2):
-            d1, d2p, d2n, intent = random.choice(self.pair_list)
-
-            while intent == 0:
-                d1, d2p, d2n, intent = random.choice(self.pair_list)
+            intent, d1 = random.choice(self.pair_list)
 
             Y[i, intent] = 1
 

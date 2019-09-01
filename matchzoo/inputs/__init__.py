@@ -21,6 +21,7 @@ from list_generator import DRMM_ListGenerator
 from list_generator import ListGenerator_Feats
 from list_generator import DMN_ListGenerator
 from list_generator import DMN_ListGeneratorWithIntents
+from list_generator import DMN_ListGeneratorOnlyIntents
 from list_generator import DMN_KD_ListGenerator
 
 def serialize(generator):
