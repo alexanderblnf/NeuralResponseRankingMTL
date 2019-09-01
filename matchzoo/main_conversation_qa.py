@@ -301,10 +301,16 @@ def predict(config):
 
     if config['net_name'] == 'DMN_CNN_MTL':
         model, model_clf = load_model(config)
+        model.load_weights(weights_file)
+        model_to_evaluate = model
+    elif config['net_name'] == 'DMN_CNN_INTENTS':
+        model_clf = load_model(config)
+        model_clf.load_weights(weights_file)
+        model_to_evaluate = model_clf
     else:
         model = load_model(config)
-
-    model.load_weights(weights_file)
+        model.load_weights(weights_file)
+        model_to_evaluate = model
 
     eval_metrics = OrderedDict()
     for mobj in config['metrics']:
@@ -322,7 +328,10 @@ def predict(config):
         num_valid = 0
         res_scores = {}
         for input_data, y_true in genfun:
-            y_pred = model.predict(input_data, batch_size=len(y_true) )
+            y_pred = model_to_evaluate.predict(input_data, batch_size=len(y_true))
+            
+            if tag == 'predict_clf':
+                y_pred = np.argmax(y_pred, axis=1)
 
             if issubclass(type(generator), inputs.list_generator.ListBasicGenerator):
                 list_counts = input_data['list_counts']
@@ -333,13 +342,21 @@ def predict(config):
                         res[k] += eval_func(y_true = y_true[pre:suf], y_pred = y_pred[pre:suf])
 
                 y_pred = np.squeeze(y_pred)
-                for lc_idx in range(len(list_counts)-1):
-                    pre = list_counts[lc_idx]
-                    suf = list_counts[lc_idx+1]
-                    for p, y, t in zip(input_data['ID'][pre:suf], y_pred[pre:suf], y_true[pre:suf]):
-                        if p[0] not in res_scores:
-                            res_scores[p[0]] = {}
-                        res_scores[p[0]][p[1]] = (y, t)
+
+                if tag == 'predict_clf':
+                    for lc_idx in range(len(list_counts)-1):
+                        pre = list_counts[lc_idx]
+                        suf = list_counts[lc_idx+1]
+                        for p, y, t in zip(input_data['ID'][pre:suf], y_pred[pre:suf], y_true[pre:suf]):
+                            res_scores[p[0]] = (y, t)
+                else:
+                    for lc_idx in range(len(list_counts)-1):
+                        pre = list_counts[lc_idx]
+                        suf = list_counts[lc_idx+1]
+                        for p, y, t in zip(input_data['ID'][pre:suf], y_pred[pre:suf], y_true[pre:suf]):
+                            if p[0] not in res_scores:
+                                res_scores[p[0]] = {}
+                            res_scores[p[0]][p[1]] = (y, t)
 
                 num_valid += len(list_counts) - 1
             else:
@@ -355,10 +372,14 @@ def predict(config):
         if tag in output_conf:
             if output_conf[tag]['save_format'] == 'TREC':
                 with open(output_conf[tag]['save_path'], 'w') as f:
-                    for qid, dinfo in res_scores.items():
-                        dinfo = sorted(dinfo.items(), key=lambda d:d[1][0], reverse=True)
-                        for inum,(did, (score, gt)) in enumerate(dinfo):
-                            print >> f, '%s\tQ0\t%s\t%d\t%f\t%s\t%s'%(qid, did, inum, score, config['net_name'], gt)
+                    if tag == 'predict_clf':
+                        for qid, entry in res_scores.items():
+                            print >> f, '%s\t%d\t%d'%(qid, entry[0], entry[1])
+                    else:
+                        for qid, dinfo in res_scores.items():
+                            dinfo = sorted(dinfo.items(), key=lambda d:d[1][0], reverse=True)
+                            for inum,(did, (score, gt)) in enumerate(dinfo):
+                                print >> f, '%s\tQ0\t%s\t%d\t%f\t%s\t%s'%(qid, did, inum, score, config['net_name'], gt)
             elif output_conf[tag]['save_format'] == 'TEXTNET':
                 with open(output_conf[tag]['save_path'], 'w') as f:
                     for qid, dinfo in res_scores.items():

@@ -63,26 +63,26 @@ class DMN_CNN_MTL_IntentPrediction(BasicModel):
             return K.tf.stack([xx for xx in x], axis=1)
 
         query = Input(name='query', shape=(1, self.config['text1_maxlen'],))
-        show_layer_info('Input query', query)
+        # show_layer_info('Input query', query)
         # show_layer_info('Input doc', doc)
 
         embedding = Embedding(self.config['vocab_size'], self.config['embed_size'], weights=[self.config['embed']], trainable = self.embed_trainable)
 
         self.i = 0
         query_cur_utt = Lambda(slice_reshape)(query)
-        show_layer_info('query_cur_utt', query_cur_utt)
+        # show_layer_info('query_cur_utt', query_cur_utt)
 
         # Transform current utterance in embedding
         q_embed = embedding(query_cur_utt)
-        show_layer_info('Query Embedding', q_embed)
+        # show_layer_info('Query Embedding', q_embed)
 
         q_rep = Bidirectional(
             GRU(self.config['hidden_size'], return_sequences=True, dropout=self.config['dropout_rate']))(q_embed)
 
-        show_layer_info('Query BIGRU representation', q_rep)
+        # show_layer_info('Query BIGRU representation', q_rep)
 
         final_q_rep = Flatten()(q_rep)
-        show_layer_info('Final representation', final_q_rep)
+        # show_layer_info('Final representation', final_q_rep)
 
         out_clf = Dense(self.config['max_intent'], activation='softmax')(final_q_rep)
         model_clf = Model(inputs=query, outputs=out_clf)

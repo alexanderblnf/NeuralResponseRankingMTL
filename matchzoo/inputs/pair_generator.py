@@ -845,8 +845,7 @@ class DMN_PairGeneratorOnlyIntents(PairBasicGenerator):
 
         # X1[:] = self.fill_word # the default word index is the last word, which is the added PAD word
         for i in range(self.batch_size * 2):
-            intent, d1 = random.choice(self.pair_list)
-
+            d1, intent = random.choice(self.pair_list)
             Y[i, intent] = 1
 
             d1_ws = self.data1[d1][len(self.data1[d1]) - 1].split()

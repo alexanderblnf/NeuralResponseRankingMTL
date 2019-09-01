@@ -17,8 +17,8 @@ class ListBasicGenerator(object):
             only_intents = config['only_intents'] if 'only_intents' in config else False
 
             if use_intents:
-                self.rel = read_relation_only_intents(filename=rel_file) if only_intents \
-                    else read_relation_with_intents(filename=rel_file)
+                self.rel = read_relation_only_intents(filename=config['relation_file']) if only_intents \
+                    else read_relation_with_intents(filename=config['relation_file'])
                 self.list_list = self.make_list_only_intents(self.rel) if only_intents \
                     else self.make_list_with_intents(self.rel)
             else:
