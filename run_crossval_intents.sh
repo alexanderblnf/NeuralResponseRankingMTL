@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 for ((i=0;i<10;i++)); do
-    cp data/mantis_10/crossval_intents/intent_data_train.tsv.$i data/mantis_10/intent_data_train.tsv && \
-    cp data/mantis_10/crossval_intents/intent_data_dev.tsv.$i data/mantis_10/intent_data_dev.tsv && \
-    cp data/mantis_10/crossval_intents/intent_data_test.tsv.$i data/mantis_10/intent_data_test.tsv && \
+    cp data/mantis_10/crossval_intents/intent_data_train.tsv.$i data/mantis_10/ModelInput/intent_data_train.tsv && \
+    cp data/mantis_10/crossval_intents/intent_data_dev.tsv.$i data/mantis_10/ModelInput/intent_data_dev.tsv && \
+    cp data/mantis_10/crossval_intents/intent_data_test.tsv.$i data/mantis_10/ModelInput/intent_data_test.tsv && \
     cd matchzoo/conqa && \
     python2.7 preprocess_dmn_only_intents.py mantis_10 && \
     python2.7 gen_w2v_mikolov.py mantis_10 0 dmn_model_input && \
