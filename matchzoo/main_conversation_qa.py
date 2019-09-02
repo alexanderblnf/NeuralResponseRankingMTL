@@ -136,13 +136,14 @@ def train(config):
     if config['net_name'] == 'DMN_CNN_MTL':
         model, model_clf = load_model(config)
         model_clf.compile(optimizer=optimizer, loss=custom_loss)
-        print '[Model] Intent classifier model Compile Done.'
+        print '[Model] MTL models Compile Done.'
     elif config['net_name'] == 'DMN_CNN_INTENTS':
         model_clf = load_model(config)
         model_clf.compile(optimizer=optimizer, loss=custom_loss)
         print '[Model] Intent Only classifier model Compile Done.'
     else:
         model = load_model(config)
+        print '[Model] Response Ranking model Compile Done.'
 
     eval_metrics = OrderedDict()
     for mobj in config['metrics']:
@@ -342,18 +343,13 @@ def predict(config):
                         res[k] += eval_func(y_true = y_true[pre:suf], y_pred = y_pred[pre:suf])
 
                 y_pred = np.squeeze(y_pred)
-
-                if tag == 'predict_clf':
-                    for lc_idx in range(len(list_counts)-1):
-                        pre = list_counts[lc_idx]
-                        suf = list_counts[lc_idx+1]
-                        for p, y, t in zip(input_data['ID'][pre:suf], y_pred[pre:suf], y_true[pre:suf]):
+                for lc_idx in range(len(list_counts) - 1):
+                    pre = list_counts[lc_idx]
+                    suf = list_counts[lc_idx + 1]
+                    for p, y, t in zip(input_data['ID'][pre:suf], y_pred[pre:suf], y_true[pre:suf]):
+                        if tag == 'predict_clf':
                             res_scores[p[0]] = (y, t)
-                else:
-                    for lc_idx in range(len(list_counts)-1):
-                        pre = list_counts[lc_idx]
-                        suf = list_counts[lc_idx+1]
-                        for p, y, t in zip(input_data['ID'][pre:suf], y_pred[pre:suf], y_true[pre:suf]):
+                        else:
                             if p[0] not in res_scores:
                                 res_scores[p[0]] = {}
                             res_scores[p[0]][p[1]] = (y, t)

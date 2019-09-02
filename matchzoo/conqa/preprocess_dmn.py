@@ -64,9 +64,9 @@ if __name__ == '__main__':
     intents_files = []
     if add_intents:
         intents_files = [
-            cur_data_dir + train_intents_file,
-            cur_data_dir + valid_intents_file,
-            cur_data_dir + test_intents_file
+            basedir + train_intents_file,
+            basedir + valid_intents_file,
+            basedir + test_intents_file
         ]
 
     corpus, rels_train, rels_valid, rels_test, rels_intents = prepare.run_with_train_valid_test_corpus_dmn(
