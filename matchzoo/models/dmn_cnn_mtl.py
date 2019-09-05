@@ -132,8 +132,8 @@ class DMN_CNN_MTL(BasicModel):
         accum_stack_gru_hidden_flat_drop = Dropout(rate=self.config['dropout_rate'])(accum_stack_gru_hidden_flat)
         # show_layer_info('Dropout', accum_stack_gru_hidden_flat_drop)
 
-        word_embed_rep = Flatten()(query_embeddings)
-        word_bigru_rep = Flatten()(query_bigru_reps)
+        word_embed_rep = Flatten()(concatenate(query_embeddings))
+        word_bigru_rep = Flatten()(concatenate(query_bigru_reps))
         q_d_rep = concatenate([word_embed_rep, word_bigru_rep])
 
         out_clf = Dense(self.config['max_intent'], activation='softmax')(q_d_rep)
