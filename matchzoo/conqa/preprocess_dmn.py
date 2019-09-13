@@ -35,7 +35,11 @@ if __name__ == '__main__':
 
     data_name = sys.argv[1] # ms or udc or ms_v2
     add_intents = False
-    if len(sys.argv) > 2 and sys.argv[2] == '--add_intents':
+    if len(sys.argv) > 2 and '--add_intents' in sys.argv:
+        add_intents = True
+
+    add_web = False
+    if len(sys.argv) > 2 and '--add_web' in sys.argv:
         add_intents = True
 
     basedir = '../../data/' + data_name + '/ModelInput/'
@@ -54,10 +58,13 @@ if __name__ == '__main__':
     elif data_name == 'mantis_10':
         train_file = 'data_train_easy.tsv'
         train_intents_file = 'data_train_easy_lookup_intents_encoded.txt'
+        train_web = 'data_train_web.tsv'
         valid_file = 'data_dev_easy.tsv'
         valid_intents_file = 'data_dev_easy_lookup_intents_encoded.txt'
+        valid_web = 'data_dev_web.tsv'
         test_file = 'data_test_easy.tsv'
         test_intents_file = 'data_test_easy_lookup_intents_encoded.txt'
+        test_web = 'data_test_web.tsv'
     else:
         raise ValueError('invalid data name!')
 
@@ -69,21 +76,32 @@ if __name__ == '__main__':
             basedir + test_intents_file
         ]
 
-    corpus, rels_train, rels_valid, rels_test, rels_intents = prepare.run_with_train_valid_test_corpus_dmn(
-        basedir + train_file, basedir + valid_file,
+    web_files = []
+    if add_web:
+        web_files = [
+            basedir + train_web,
+            basedir + valid_web,
+            basedir + test_web,
+        ]
+
+    corpus, rels_train, rels_valid, rels_test, rels_intents, all_rels_web = prepare.run_with_train_valid_test_corpus_dmn(
+        basedir + train_file,
+        basedir + valid_file,
         basedir + test_file,
-        intents_files)
+        intents_files=intents_files,
+        web_files=web_files
+    )
 
     for data_part in list(['train', 'valid', 'test']):
         if data_part == 'train':
             rels = rels_train
-            intent_index = 0
+            index = 0
         elif data_part == 'valid':
             rels = rels_valid
-            intent_index = 1
+            index = 1
         else:
             rels = rels_test
-            intent_index = 2
+            index = 2
 
         print 'total relations in ', data_part, len(rels)
         prepare.save_relation(cur_data_dir + 'relation_' + data_part + '.txt', rels)
@@ -92,13 +110,20 @@ if __name__ == '__main__':
 
         rels_intent = None
         if add_intents:
-            rels_intent = rels_intents[intent_index]
+            rels_intent = rels_intents[index]
 
             print '[Intents] total relations in ', data_part, len(rels_intent)
-            print(rels_intent[0])
             prepare.save_relation_intents(cur_data_dir + 'relation_' + data_part + '_intents.txt', rels_intent)
             print '[Intents] filter queries with duplicated doc ids...'
             prepare.check_filter_query_with_dup_doc(cur_data_dir + 'relation_' + data_part + '_intents.txt')
+
+        rels_web = None
+        if add_web:
+            rels_web = all_rels_web[index]
+            print '[Web] total relations in ', data_part, len(rels_web)
+            prepare.save_relation_intents(cur_data_dir + 'relation_' + data_part + '_web.txt', rels_web)
+            print '[Web] filter queries with duplicated doc ids...'
+            prepare.check_filter_query_with_dup_doc(cur_data_dir + 'relation_' + data_part + '_web.txt')
 
     print 'total corpus ', len(corpus)
     prepare.save_corpus_dmn(cur_data_dir + 'corpus.txt', corpus, '\t')

@@ -133,7 +133,7 @@ class Preparation(object):
             f.close()
         return corpus, rels_train, rels_valid, rels_test
 
-    def run_with_train_valid_test_corpus_dmn(self, train_file, valid_file, test_file, intents_files=[]):
+    def run_with_train_valid_test_corpus_dmn(self, train_file, valid_file, test_file, intents_files=[], web_files = []):
         '''
         Run with pre-splited train_file, valid_file, test_file for dmn model for conversation response ranking
         The input format should be label \t text1 (conversation context utterances seperated by \t) \t text2
@@ -151,12 +151,16 @@ class Preparation(object):
         corpus = {}
         rels = []
         rels_intents = []
+        rels_web = []
         rels_train = []
         rels_train_intents = []
+        rels_train_web = []
         rels_valid = []
         rels_valid_intents = []
+        rels_valid_web = []
         rels_test = []
         rels_test_intents = []
+        rels_test_web = []
         # merge corpus files, but return rels for train/valid/test seperately
         curQ = 'init'
         curQid = 0
@@ -199,7 +203,47 @@ class Preparation(object):
                     rels_intents.append((label, id1, id2, intents[line_index]))
 
             f.close()
-        return corpus, rels_train, rels_valid, rels_test, [rels_train_intents, rels_valid_intents, rels_test_intents]
+
+        if web_files:
+            curQ = 'init'
+            curQid = 0
+            for file_index, file_path in enumerate(web_files):
+                if file_index == 0:
+                    rels_web = rels_train_web
+                if file_index == 1:
+                    rels_web = rels_valid_web
+                if file_index == 2:
+                    rels_web = rels_test_web
+
+                f = open(file_path, 'r')
+
+                for line_index, line in enumerate(f):
+                    line = line.decode('utf8')
+                    line = line.strip()
+                    subs = self.parse_line_dmn(line)
+                    label = subs[0]
+                    t1 = '\t'.join(subs[1:-1])
+                    t2 = subs[-1]
+                    id2 = self.get_text_id(hashid, t2, 'DW')
+                    # generate unique query ids
+                    if t1 == curQ:
+                        # same query
+                        id1 = 'QW' + str(curQid)
+                    else:
+                        # new query
+                        curQid += 1
+                        id1 = 'QW' + str(curQid)
+                        curQ = t1
+
+                    corpus[id1] = t1
+                    corpus[id2] = t2
+                    rels_web.append((label, id1, id2))
+
+                f.close()
+
+        return corpus, rels_train, rels_valid, rels_test, \
+               [rels_train_intents, rels_valid_intents, rels_test_intents], \
+               [rels_train_web, rels_valid_web, rels_test_web]
 
     @staticmethod
     def save_corpus(file_path, corpus):
