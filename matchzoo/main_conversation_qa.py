@@ -328,6 +328,9 @@ def predict(config):
         model_clf = load_model(config)
         model_clf.load_weights(weights_file)
         model_to_evaluate = model_clf
+    elif config['net_name'] == 'DMN_CNN_MTL_Web':
+        model, model_web = load_model(config)
+        model_to_evaluate = model
     else:
         model = load_model(config)
         model.load_weights(weights_file)
