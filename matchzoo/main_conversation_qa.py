@@ -12,16 +12,26 @@ import tensorflow
 # tensorflow.set_random_seed(49999)
 
 from collections import OrderedDict
-
 import keras
 import keras.backend as K
 from keras.models import Sequential, Model
-
 from utils import *
 import inputs
 import metrics
 from losses import *
 import os
+
+# os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+#
+# import keras.backend.tensorflow_backend as ktf
+#
+#
+# def get_session(gpu_fraction=0.5):
+#     gpu_options = tensorflow.GPUOptions(per_process_gpu_memory_fraction=gpu_fraction, allow_growth=True)
+#     return tensorflow.Session(config=tensorflow.ConfigProto(gpu_options=gpu_options))
+#
+#
+# ktf.set_session(get_session())
 
 
 def custom_loss(y_true, y_pred):
@@ -141,6 +151,8 @@ def train(config):
         model_clf = load_model(config)
         model_clf.compile(optimizer=optimizer, loss=custom_loss)
         print '[Model] Intent Only classifier model Compile Done.'
+    elif config['net_name'] == 'DMN_CNN_MTL_Web':
+        model, model_web = load_model(config)
     else:
         model = load_model(config)
         print '[Model] Response Ranking model Compile Done.'
@@ -165,6 +177,10 @@ def train(config):
         model.compile(optimizer=optimizer, loss=loss)
         print '[Model] Model Compile Done.'
 
+        if config['net_name'] == 'DMN_CNN_MTL_Web':
+            model_web.compile(optimizer=optimizer, loss=loss)
+            print('[Model Web] Model Compile Done')
+
     if share_input_conf['predict'] == 'False':
         if 'test' in eval_gen:
             del eval_gen['test']
@@ -180,6 +196,8 @@ def train(config):
 
             if tag == "train_clf":
                 correct_model = model_clf
+            elif tag == 'train_web':
+                correct_model = model_web
             elif tag == "train":
                 correct_model = model
 
@@ -202,6 +220,8 @@ def train(config):
 
                 if tag == "train_clf":
                     correct_model = model_clf
+                if tag == 'train_web':
+                    correct_model = model_web
                 elif tag == "train":
                     correct_model = model
 

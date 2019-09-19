@@ -35,12 +35,12 @@ if __name__ == '__main__':
 
     data_name = sys.argv[1] # ms or udc or ms_v2
     add_intents = False
-    if len(sys.argv) > 2 and '--add_intents' in sys.argv:
+    if len(sys.argv) > 2 and '--add_intents' in list(sys.argv):
         add_intents = True
 
     add_web = False
-    if len(sys.argv) > 2 and '--add_web' in sys.argv:
-        add_intents = True
+    if len(sys.argv) > 2 and '--add_web' in list(sys.argv):
+        add_web = True
 
     basedir = '../../data/' + data_name + '/ModelInput/'
     cur_data_dir = basedir + 'dmn_model_input/'
@@ -121,7 +121,7 @@ if __name__ == '__main__':
         if add_web:
             rels_web = all_rels_web[index]
             print '[Web] total relations in ', data_part, len(rels_web)
-            prepare.save_relation_intents(cur_data_dir + 'relation_' + data_part + '_web.txt', rels_web)
+            prepare.save_relation(cur_data_dir + 'relation_' + data_part + '_web.txt', rels_web)
             print '[Web] filter queries with duplicated doc ids...'
             prepare.check_filter_query_with_dup_doc(cur_data_dir + 'relation_' + data_part + '_web.txt')
 

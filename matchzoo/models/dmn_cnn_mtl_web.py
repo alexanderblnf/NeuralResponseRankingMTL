@@ -23,7 +23,6 @@ sys.path.append('../matchzoo/utils/')
 from Match import *
 from utility import *
 
-
 class DMN_CNN_MTL_Web(BasicModel):
     def __init__(self, config):
         super(DMN_CNN_MTL_Web, self).__init__(config)
@@ -38,7 +37,7 @@ class DMN_CNN_MTL_Web(BasicModel):
 
         if not self.check():
             raise TypeError('[DMN_CNN_MTL_Web] parameter check wrong')
-        print '[DMN_CNN_MTL_Web] init done'
+        print '[DMN_CNN_Web] init done'
 
     def setup(self, config):
         if not isinstance(config, dict):
@@ -63,90 +62,69 @@ class DMN_CNN_MTL_Web(BasicModel):
             return K.tf.stack([xx for xx in x], axis=1)
 
         query = Input(name='query', shape=(self.config['text1_max_utt_num'],self.config['text1_maxlen'],)) # get the data by name
-        # show_layer_info('Input query', query)
+        show_layer_info('Input query', query)
         doc = Input(name='doc', shape=(self.config['text2_maxlen'],))
-        # show_layer_info('Input doc', doc)
+        show_layer_info('Input doc', doc)
 
         embedding = Embedding(self.config['vocab_size'], self.config['embed_size'], weights=[self.config['embed']], trainable = self.embed_trainable)
         d_embed = embedding(doc)
-        # show_layer_info('Doc Embedding', d_embed)
+        show_layer_info('Doc Embedding', d_embed)
         accum_stack = []
-
-        query_embeddings = []
-        query_bigru_reps = []
-        doc_bigru_reps = []
 
         for i in range(self.config['text1_max_utt_num']):
             self.i = i
             query_cur_utt = Lambda(slice_reshape)(query)
-            # show_layer_info('query_cur_utt', query_cur_utt)
-
-            # Transform current utterance in embedding
+            show_layer_info('query_cur_utt', query_cur_utt)
             q_embed = embedding(query_cur_utt)
-            query_embeddings.append(q_embed)
-            # show_layer_info('Query Embedding', q_embed)
-
+            show_layer_info('Query Embedding', q_embed)
             q_rep = Bidirectional(
                 GRU(self.config['hidden_size'], return_sequences=True, dropout=self.config['dropout_rate']))(q_embed)
-            query_bigru_reps.append(q_rep)
-            # show_layer_info('Bidirectional-GRU', q_rep)
-
+            show_layer_info('Bidirectional-GRU', q_rep)
             d_rep = Bidirectional(
                 GRU(self.config['hidden_size'], return_sequences=True, dropout=self.config['dropout_rate']))(d_embed)
-            doc_bigru_reps.append(d_rep)
-            # show_layer_info('Bidirectional-GRU', d_rep)
+            show_layer_info('Bidirectional-GRU', d_rep)
 
-            # dot product of embeddings (Can try other interaction functions here such as cosine, ind, bi-linear, etc.)
-            cross1 = Match(match_type='dot')([q_embed, d_embed])
-            # dot product of GRU output representations
-            cross2 = Match(match_type='dot')([q_rep, d_rep])
+            cross1 = Match(match_type='dot')([q_embed, d_embed]) # dot product of embeddings (Can try other interaction functions here such as cosine, ind, bi-linear, etc.)
+            cross2 = Match(match_type='dot')([q_rep, d_rep]) # dot product of GRU output representations
 
-            # show_layer_info('Match-dot1', cross1)
-            # show_layer_info('Match-dot2', cross2)
+            show_layer_info('Match-dot1', cross1)
+            show_layer_info('Match-dot2', cross2)
             cross = Lambda(concate)([cross1, cross2])
             z = Reshape((self.config['text1_maxlen'], self.config['text2_maxlen'], 2))(cross) # batch_size * t1_len * t2_len * 2 channels
-            # show_layer_info('Reshape', z)
+            show_layer_info('Reshape', z)
 
             for j in range(self.config['num_conv2d_layers']):
                 z = Conv2D(filters=self.config['2d_kernel_counts'][j], kernel_size=self.config['2d_kernel_sizes'][j],
                            padding='valid', activation='relu')(z)
-                # show_layer_info('Conv2D', z)
+                show_layer_info('Conv2D', z)
                 z = MaxPooling2D(pool_size=(self.config['2d_mpool_sizes'][j][0], self.config['2d_mpool_sizes'][j][1]))(z)
-                # show_layer_info('MaxPooling2D', z)
+                show_layer_info('MaxPooling2D', z)
 
             z = Flatten()(z)
-            # show_layer_info('Flatten-z', z)
-            # MLP  50 is the setting in Wu et al in ACL'17
-            z = Dense(50, activation="tanh")(z)
-            # show_layer_info('Dense-z', z)
+            show_layer_info('Flatten-z', z)
+            z = Dense(50, activation="tanh")(z) # MLP  50 is the setting in Wu et al in ACL'17
+            show_layer_info('Dense-z', z)
             accum_stack.append(z)
 
         accum_stack = Lambda(stack)(accum_stack) # batch_size * max_turn_num * 50
-        # show_layer_info('accum_stack', accum_stack)
+        show_layer_info('accum_stack', accum_stack)
         # GRU for Matching Accumulation
         accum_stack_gru_hidden = Bidirectional(
                 GRU(self.config['hidden_size'], return_sequences=True, dropout=self.config['dropout_rate']))(accum_stack)
-        # show_layer_info('accum_stack_gru_hidden', accum_stack_gru_hidden)
+        show_layer_info('accum_stack_gru_hidden', accum_stack_gru_hidden)
         accum_stack_gru_hidden_flat = Reshape((-1,))(accum_stack_gru_hidden)
-        # show_layer_info('accum_stack_gru_hidden_flat', accum_stack_gru_hidden_flat)
+        show_layer_info('accum_stack_gru_hidden_flat', accum_stack_gru_hidden_flat)
         accum_stack_gru_hidden_flat_drop = Dropout(rate=self.config['dropout_rate'])(accum_stack_gru_hidden_flat)
-        # show_layer_info('Dropout', accum_stack_gru_hidden_flat_drop)
-
-        word_embed_rep = Flatten()(concatenate(query_embeddings))
-        word_bigru_rep = Flatten()(concatenate(query_bigru_reps))
-        q_d_rep = concatenate([word_embed_rep, word_bigru_rep])
-
-        out_clf = Dense(self.config['max_intent'], activation='softmax')(q_d_rep)
-        model_clf = Model(inputs=[query, doc], outputs=out_clf)
+        show_layer_info('Dropout', accum_stack_gru_hidden_flat_drop)
 
         # MLP
         if self.config['target_mode'] == 'classification':
             out_ = Dense(2, activation='softmax')(accum_stack_gru_hidden_flat_drop)
         elif self.config['target_mode'] in ['regression', 'ranking']:
             out_ = Dense(1)(accum_stack_gru_hidden_flat_drop)
-
-        # show_layer_info('Dense', out_)
-        # model = Model(inputs=[query, doc, dpool_index], outputs=out_)
+        show_layer_info('Dense', out_)
+        #model = Model(inputs=[query, doc, dpool_index], outputs=out_)
         model = Model(inputs=[query, doc], outputs=out_)
-
-        return model, model_clf
+        out_web = Dense(1)(accum_stack_gru_hidden_flat_drop)
+        model_web = Model(inputs=[query, doc], outputs=out_web)
+        return model, model_web
