@@ -14,6 +14,7 @@ from pair_generator import DMN_PairGenerator
 from pair_generator import DMN_KD_PairGenerator
 from pair_generator import DMN_PairGeneratorWithIntents
 from pair_generator import DMN_PairGeneratorOnlyIntents
+from pair_generator import DMN_PairGenerator_Web_v2
 
 from list_generator import ListGenerator
 from list_generator import Triletter_ListGenerator
