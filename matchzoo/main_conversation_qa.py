@@ -1,15 +1,25 @@
 # -*- coding: utf8 -*-
 import os
+
+seed = int(os.environ['DMN_RANDOM_SEED'])
+print('Using seed: ' + str(seed))
+
 import sys
 import time
 import json
 import argparse
+
 import random
-# random.seed(49999)
+if seed:
+    random.seed(seed)
+
 import numpy
-# numpy.random.seed(49999)
+if seed:
+    numpy.random.seed(seed)
+
 import tensorflow
-# tensorflow.set_random_seed(49999)
+if seed:
+    tensorflow.set_random_seed(seed)
 
 from collections import OrderedDict
 import keras
