@@ -161,7 +161,7 @@ def train(config):
         model_clf = load_model(config)
         model_clf.compile(optimizer=optimizer, loss=custom_loss)
         print '[Model] Intent Only classifier model Compile Done.'
-    elif config['net_name'] == 'DMN_CNN_MTL_Web':
+    elif config['net_name'] == 'DMN_CNN_MTL_Web' or config['net_name'] == 'DMN_CNN_MTL_Web_v2':
         model, model_web = load_model(config)
     else:
         model = load_model(config)
@@ -187,7 +187,7 @@ def train(config):
         model.compile(optimizer=optimizer, loss=loss)
         print '[Model] Model Compile Done.'
 
-        if config['net_name'] == 'DMN_CNN_MTL_Web':
+        if config['net_name'] == 'DMN_CNN_MTL_Web' or config['net_name'] == 'DMN_CNN_MTL_Web_v2':
             model_web.compile(optimizer=optimizer, loss=loss)
             print('[Model Web] Model Compile Done')
 
@@ -338,7 +338,7 @@ def predict(config):
         model_clf = load_model(config)
         model_clf.load_weights(weights_file)
         model_to_evaluate = model_clf
-    elif config['net_name'] == 'DMN_CNN_MTL_Web':
+    elif config['net_name'] == 'DMN_CNN_MTL_Web' or config['net_name'] == 'DMN_CNN_MTL_Web_v2':
         model, model_web = load_model(config)
         model_to_evaluate = model
     else:
