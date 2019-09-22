@@ -20,6 +20,7 @@ class PairBasicGenerator(object):
             self.rel = read_relation_only_intents(filename=rel_file) if only_intents \
                 else read_relation_with_intents(filename=rel_file)
         else:
+            print('Generating standard relations')
             self.rel = read_relation(filename=rel_file)
 
         self.batch_size = config['batch_size']
@@ -34,6 +35,7 @@ class PairBasicGenerator(object):
                 self.pair_list = self.make_pair_static_only_intents(self.rel) if only_intents \
                     else self.make_pair_static_with_intents(self.rel)
             else:
+                print('Generating standard pair lists')
                 self.pair_list = self.make_pair_static(self.rel)
 
             self.pair_list_iter = None
