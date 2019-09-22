@@ -33,7 +33,6 @@ class DMN_CNN(BasicModel):
         self.embed_trainable = config['train_embed']
         self.setup(config)
         self.i = 0
-        K.set_image_data_format('channels_last')
 
         if not self.check():
             raise TypeError('[DMN_CNN] parameter check wrong')
