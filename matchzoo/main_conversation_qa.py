@@ -253,6 +253,8 @@ def train(config):
                 print 'Iter:%d\t%s' % (i_e, '\t'.join(['%s=%f'%(k,v/num_valid) for k, v in res.items()]))
                 sys.stdout.flush()
 
+        sys.stdout.flush()
+
         if (i_e+1) % save_weights_iters == 0:
             if config['net_name'] != 'DMN_CNN_INTENTS':
                 model.save_weights(weights_file % (i_e+1))
