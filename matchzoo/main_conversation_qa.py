@@ -29,7 +29,6 @@ from utils import *
 import inputs
 import metrics
 from losses import *
-import os
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 #
