@@ -1,8 +1,7 @@
 # -*- coding: utf8 -*-
 import os
 
-seed = int(os.environ['DMN_RANDOM_SEED'])
-print('Using seed: ' + str(seed))
+seed = None
 
 import sys
 import time
