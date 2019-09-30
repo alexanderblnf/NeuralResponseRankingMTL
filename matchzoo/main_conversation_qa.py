@@ -254,11 +254,12 @@ def train(config):
 
         sys.stdout.flush()
 
+        weights_file_name = (weights_file % (i_e+1)) + '-' + str(seed)
         if (i_e+1) % save_weights_iters == 0:
             if config['net_name'] != 'DMN_CNN_INTENTS':
-                model.save_weights(weights_file % (i_e+1))
+                model.save_weights(weights_file_name)
             else:
-                model_clf.save_weights(weights_file % (i_e + 1))
+                model_clf.save_weights(weights_file_name)
 
 def predict(config):
     ######## Read input config ########
@@ -328,7 +329,7 @@ def predict(config):
 
     ######## Load Model ########
     global_conf = config["global"]
-    weights_file = str(global_conf['weights_file']) + '.' + str(global_conf['test_weights_iters'])
+    weights_file = str(global_conf['weights_file']) + '.' + str(global_conf['test_weights_iters']) + '-' + str(seed)
 
     if config['net_name'] == 'DMN_CNN_MTL':
         model, model_clf = load_model(config)
@@ -399,8 +400,9 @@ def predict(config):
         generator.reset()
 
         if tag in output_conf:
+            save_path = output_conf[tag]['save_path'] + '-' + str(seed)
             if output_conf[tag]['save_format'] == 'TREC':
-                with open(output_conf[tag]['save_path'], 'w') as f:
+                with open(save_path, 'w') as f:
                     if tag == 'predict_clf':
                         for qid, entry in res_scores.items():
                             print >> f, '%s\t%d\t%d'%(qid, entry[0], entry[1])
@@ -410,7 +412,7 @@ def predict(config):
                             for inum,(did, (score, gt)) in enumerate(dinfo):
                                 print >> f, '%s\tQ0\t%s\t%d\t%f\t%s\t%s'%(qid, did, inum, score, config['net_name'], gt)
             elif output_conf[tag]['save_format'] == 'TEXTNET':
-                with open(output_conf[tag]['save_path'], 'w') as f:
+                with open(save_path, 'w') as f:
                     for qid, dinfo in res_scores.items():
                         dinfo = sorted(dinfo.items(), key=lambda d:d[1][0], reverse=True)
                         for inum,(did, (score, gt)) in enumerate(dinfo):
