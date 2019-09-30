@@ -63,8 +63,10 @@ def load_model(config):
 
 def train(config):
 
+    if seed is None:
+        raise Exception('Seed should be set')
     print(json.dumps(config, indent=2))
-    print('Using seed' + str(seed))
+    print('Using seed: ' + str(seed))
     # read basic config
     global_conf = config["global"]
     optimizer = global_conf['optimizer']
@@ -533,6 +535,7 @@ def main(argv):
         if num_iters != None:
             config['global']['num_iters'] = int(num_iters)
         if keras_random_seed != None:
+            global seed
             seed = int(keras_random_seed)
             random.seed(seed)
             numpy.random.seed(seed)
