@@ -64,6 +64,7 @@ def load_model(config):
 def train(config):
 
     print(json.dumps(config, indent=2))
+    print('Using seed' + str(seed))
     # read basic config
     global_conf = config["global"]
     optimizer = global_conf['optimizer']
