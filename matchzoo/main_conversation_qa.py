@@ -229,11 +229,9 @@ def train(config):
                 res = dict([[k,0.] for k in eval_metrics.keys()])
                 num_valid = 0
 
-                if tag == "train":
+                if tag == "valid":
                     correct_model = model
-                elif tag == 'train_web':
-                    correct_model = model_web
-                elif tag == "train_clf":
+                elif tag == "valid_clf":
                     correct_model = model_clf
 
                 for input_data, y_true in genfun:
