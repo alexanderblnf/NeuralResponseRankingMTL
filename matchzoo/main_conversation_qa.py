@@ -222,19 +222,19 @@ def train(config):
             print 'Iter:%d\tloss=%.6f' % (i_e, history.history['loss'][0])
 
         if (i_e+1) % save_weights_iters == 0:
-            print('Evaluating...')
             for tag, generator in eval_gen.items():
+                print('Evaluating tag:' + str(tag))
                 genfun = generator.get_batch_generator()
                 print '[%s]\t[Eval:%s]' % (time.strftime('%m-%d-%Y %H:%M:%S', time.localtime(time.time())), tag),
                 res = dict([[k,0.] for k in eval_metrics.keys()])
                 num_valid = 0
 
-                if tag == "train_clf":
-                    correct_model = model_clf
-                if tag == 'train_web':
-                    correct_model = model_web
-                elif tag == "train":
+                if tag == "train":
                     correct_model = model
+                elif tag == 'train_web':
+                    correct_model = model_web
+                elif tag == "train_clf":
+                    correct_model = model_clf
 
                 for input_data, y_true in genfun:
                     y_pred = correct_model.predict(input_data, batch_size=len(y_true))
