@@ -65,6 +65,16 @@ if __name__ == '__main__':
         test_file = 'data_test_easy.tsv'
         test_intents_file = 'data_test_easy_lookup_intents_encoded.txt'
         test_web = 'data_test_web.tsv'
+    elif data_name == 'mantis_50':
+        train_file = 'data_train.tsv'
+        train_intents_file = 'data_train_lookup_intents_encoded.txt'
+        train_web = 'data_train_web.tsv'
+        valid_file = 'data_dev.tsv'
+        valid_intents_file = 'data_dev_lookup_intents_encoded.txt'
+        valid_web = 'data_dev_web.tsv'
+        test_file = 'data_test.tsv'
+        test_intents_file = 'data_test_lookup_intents_encoded.txt'
+        test_web = 'data_test_web.tsv'
     else:
         raise ValueError('invalid data name!')
 
