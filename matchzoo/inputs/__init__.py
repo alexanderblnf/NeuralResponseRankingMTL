@@ -24,6 +24,7 @@ from list_generator import DMN_ListGenerator
 from list_generator import DMN_ListGeneratorWithIntents
 from list_generator import DMN_ListGeneratorOnlyIntents
 from list_generator import DMN_KD_ListGenerator
+from list_generator import DMN_ListGenerator_Web_v2
 
 def serialize(generator):
     return generator.__name__

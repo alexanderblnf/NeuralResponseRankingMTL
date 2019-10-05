@@ -232,6 +232,8 @@ def train(config):
 
                 if tag == "valid":
                     correct_model = model
+                elif tag == "valid_web":
+                    correct_model = model_web
                 elif tag == "valid_clf":
                     correct_model = model_clf
 
@@ -335,22 +337,21 @@ def predict(config):
     ######## Load Model ########
     global_conf = config["global"]
     weights_file = str(global_conf['weights_file']) + '.' + str(global_conf['test_weights_iters']) + '-' + str(seed)
+    weights_file_web = str(global_conf['weights_file_web']) + '.%d' if 'weights_file_web' in global_conf else None
 
     if config['net_name'] == 'DMN_CNN_MTL':
         model, model_clf = load_model(config)
         model.load_weights(weights_file)
-        model_to_evaluate = model
     elif config['net_name'] == 'DMN_CNN_INTENTS':
         model_clf = load_model(config)
         model_clf.load_weights(weights_file)
-        model_to_evaluate = model_clf
     elif config['net_name'] == 'DMN_CNN_MTL_Web' or config['net_name'] == 'DMN_CNN_MTL_Web_v2':
         model, model_web = load_model(config)
-        model_to_evaluate = model
+        model.load_weights(weights_file)
+        model_web.load_weights(weights_file_web)
     else:
         model = load_model(config)
         model.load_weights(weights_file)
-        model_to_evaluate = model
 
     eval_metrics = OrderedDict()
     for mobj in config['metrics']:
@@ -367,6 +368,14 @@ def predict(config):
         print '[%s]\t[Predict] @ %s ' % (time.strftime('%m-%d-%Y %H:%M:%S', time.localtime(time.time())), tag),
         num_valid = 0
         res_scores = {}
+
+        if tag == 'predict':
+            model_to_evaluate = model
+        elif tag == 'predict_clf':
+            model_to_evaluate = model_clf
+        elif tag == 'predict_web':
+            model_to_evaluate = model_web
+
         for input_data, y_true in genfun:
             y_pred = model_to_evaluate.predict(input_data, batch_size=len(y_true))
             
