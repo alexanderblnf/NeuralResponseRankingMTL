@@ -71,6 +71,7 @@ def train(config):
     global_conf = config["global"]
     optimizer = global_conf['optimizer']
     weights_file = str(global_conf['weights_file']) + '.%d'
+    weights_file_web = str(global_conf['weights_file_web']) + '.%d' if 'weights_file_web' in global_conf else None
     display_interval = int(global_conf['display_interval'])
     num_iters = int(global_conf['num_iters'])
     save_weights_iters = int(global_conf['save_weights_iters'])
@@ -256,7 +257,11 @@ def train(config):
 
         weights_file_name = (weights_file % (i_e+1)) + '-' + str(seed)
         if (i_e+1) % save_weights_iters == 0:
-            if config['net_name'] != 'DMN_CNN_INTENTS':
+            if config['net_name'] == 'DMN_CNN_MTL_Web' or config['net_name'] == 'DMN_CNN_MTL_Web_v2':
+                weights_file_name_web = (weights_file_web % (i_e + 1)) + '-' + str(seed)
+                model.save_weights(weights_file_name)
+                model_web.save_weights(weights_file_name_web)
+            elif config['net_name'] != 'DMN_CNN_INTENTS':
                 model.save_weights(weights_file_name)
             else:
                 model_clf.save_weights(weights_file_name)
