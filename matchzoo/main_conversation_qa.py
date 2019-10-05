@@ -414,10 +414,7 @@ def predict(config):
         generator.reset()
 
         if tag in output_conf:
-            if tag == 'predict_web':
-                save_path = output_conf[tag]['save_path_web'] + '-' + str(seed)
-            else:
-                save_path = output_conf[tag]['save_path'] + '-' + str(seed)
+            save_path = output_conf[tag]['save_path'] + '-' + str(seed)
 
             if output_conf[tag]['save_format'] == 'TREC':
                 with open(save_path, 'w') as f:
