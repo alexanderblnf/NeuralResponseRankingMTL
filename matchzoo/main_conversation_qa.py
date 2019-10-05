@@ -337,7 +337,6 @@ def predict(config):
     ######## Load Model ########
     global_conf = config["global"]
     weights_file = str(global_conf['weights_file']) + '.' + str(global_conf['test_weights_iters']) + '-' + str(seed)
-    weights_file_web = str(global_conf['weights_file_web']) + '.%d' if 'weights_file_web' in global_conf else None
 
     if config['net_name'] == 'DMN_CNN_MTL':
         model, model_clf = load_model(config)
@@ -348,6 +347,7 @@ def predict(config):
     elif config['net_name'] == 'DMN_CNN_MTL_Web' or config['net_name'] == 'DMN_CNN_MTL_Web_v2':
         model, model_web = load_model(config)
         model.load_weights(weights_file)
+        weights_file_web = str(global_conf['weights_file_web']) + '.' + str(global_conf['test_weights_iters']) + '-' + str(seed)
         model_web.load_weights(weights_file_web)
     else:
         model = load_model(config)
