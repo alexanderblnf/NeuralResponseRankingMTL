@@ -30,17 +30,17 @@ import inputs
 import metrics
 from losses import *
 
-# os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-#
-# import keras.backend.tensorflow_backend as ktf
-#
-#
-# def get_session(gpu_fraction=0.5):
-#     gpu_options = tensorflow.GPUOptions(per_process_gpu_memory_fraction=gpu_fraction, allow_growth=True)
-#     return tensorflow.Session(config=tensorflow.ConfigProto(gpu_options=gpu_options))
-#
-#
-# ktf.set_session(get_session())
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
+import keras.backend.tensorflow_backend as ktf
+
+
+def get_session(gpu_fraction=0.8):
+    gpu_options = tensorflow.GPUOptions(per_process_gpu_memory_fraction=gpu_fraction, allow_growth=True)
+    return tensorflow.Session(config=tensorflow.ConfigProto(gpu_options=gpu_options))
+
+
+ktf.set_session(get_session())
 
 
 def custom_loss(y_true, y_pred):
@@ -66,7 +66,6 @@ def train(config):
 
     if seed is None:
         raise Exception('Seed should be set')
-    print(json.dumps(config, indent=2))
     print('Using seed: ' + str(seed))
     # read basic config
     global_conf = config["global"]
@@ -552,7 +551,7 @@ def main(argv):
         if num_iters != None:
             config['global']['num_iters'] = int(num_iters)
         if learning_rate != None:
-            config['global']['learning_rate'] = int(learning_rate)
+            config['global']['learning_rate'] = float(learning_rate)
         if keras_random_seed != None:
             global seed
             seed = int(keras_random_seed)
