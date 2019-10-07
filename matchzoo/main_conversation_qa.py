@@ -473,6 +473,7 @@ def main(argv):
     parser.add_argument('--num_iters')
     parser.add_argument('--keras_random_seed')
     parser.add_argument('--predict')
+    parser.add_argument('--learning_rate', help='Set the learning rate')
 
     args = parser.parse_args()
     # parse the hyper-parameters from the command lines
@@ -508,6 +509,7 @@ def main(argv):
         num_iters = args.num_iters
         keras_random_seed = args.keras_random_seed
         predict_eval = args.predict
+        learning_rate = args.learning_rate
 
         if embed_size != None:
             config['inputs']['share']['embed_size'] = int(embed_size)
@@ -549,6 +551,8 @@ def main(argv):
             config['global']['test_weights_iters'] = int(test_weights_iters)
         if num_iters != None:
             config['global']['num_iters'] = int(num_iters)
+        if learning_rate != None:
+            config['global']['learning_rate'] = int(learning_rate)
         if keras_random_seed != None:
             global seed
             seed = int(keras_random_seed)
