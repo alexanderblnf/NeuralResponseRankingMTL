@@ -24,6 +24,7 @@ from collections import OrderedDict
 import keras
 import keras.backend as K
 from keras.models import Sequential, Model
+from keras.optimizers import Adam
 from utils import *
 import inputs
 import metrics
@@ -69,7 +70,8 @@ def train(config):
     print('Using seed: ' + str(seed))
     # read basic config
     global_conf = config["global"]
-    optimizer = global_conf['optimizer']
+    learning_rate = global_conf['learning_rate']
+    optimizer = Adam(lr=learning_rate)
     weights_file = str(global_conf['weights_file']) + '.%d'
     weights_file_web = str(global_conf['weights_file_web']) + '.%d' if 'weights_file_web' in global_conf else None
     display_interval = int(global_conf['display_interval'])
