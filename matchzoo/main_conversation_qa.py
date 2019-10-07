@@ -30,17 +30,17 @@ import inputs
 import metrics
 from losses import *
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
-import keras.backend.tensorflow_backend as ktf
-
-
-def get_session(gpu_fraction=0.8):
-    gpu_options = tensorflow.GPUOptions(per_process_gpu_memory_fraction=gpu_fraction, allow_growth=True)
-    return tensorflow.Session(config=tensorflow.ConfigProto(gpu_options=gpu_options))
-
-
-ktf.set_session(get_session())
+# import keras.backend.tensorflow_backend as ktf
+#
+#
+# def get_session(gpu_fraction=0.8):
+#     gpu_options = tensorflow.GPUOptions(per_process_gpu_memory_fraction=gpu_fraction, allow_growth=True)
+#     return tensorflow.Session(config=tensorflow.ConfigProto(gpu_options=gpu_options))
+#
+#
+# ktf.set_session(get_session())
 
 
 def custom_loss(y_true, y_pred):
@@ -362,6 +362,7 @@ def predict(config):
             eval_metrics[mobj] = metrics.get(mt_key)(int(mt_val))
         else:
             eval_metrics[mobj] = metrics.get(mobj)
+
     res = dict([[k,0.] for k in eval_metrics.keys()])
 
     for tag, generator in predict_gen.items():
