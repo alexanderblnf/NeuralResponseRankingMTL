@@ -166,6 +166,9 @@ def train(config):
         print '[Model] Intent Only classifier model Compile Done.'
     elif config['net_name'] == 'DMN_CNN_MTL_Web' or config['net_name'] == 'DMN_CNN_MTL_Web_v2':
         model, model_web = load_model(config)
+    elif config['net_name'] == 'DMN_CNN_MTL_All':
+        model, model_web, model_clf = load_model(config)
+        model_clf.compile(optimizer=optimizer, loss=custom_loss)
     else:
         model = load_model(config)
         print '[Model] Response Ranking model Compile Done.'
@@ -190,7 +193,8 @@ def train(config):
         model.compile(optimizer=optimizer, loss=loss)
         print '[Model] Model Compile Done.'
 
-        if config['net_name'] == 'DMN_CNN_MTL_Web' or config['net_name'] == 'DMN_CNN_MTL_Web_v2':
+        if config['net_name'] == 'DMN_CNN_MTL_Web' or config['net_name'] == 'DMN_CNN_MTL_Web_v2' \
+                or config['net_name'] == 'DMN_CNN_MTL_All':
             model_web.compile(optimizer=optimizer, loss=loss)
             print('[Model Web] Model Compile Done')
 
@@ -260,7 +264,8 @@ def train(config):
 
         weights_file_name = (weights_file % (i_e+1)) + '-' + str(seed)
         if (i_e+1) % save_weights_iters == 0:
-            if config['net_name'] == 'DMN_CNN_MTL_Web' or config['net_name'] == 'DMN_CNN_MTL_Web_v2':
+            if config['net_name'] == 'DMN_CNN_MTL_Web' or config['net_name'] == 'DMN_CNN_MTL_Web_v2'  \
+                    or config['net_name'] == 'DMN_CNN_MTL_All':
                 weights_file_name_web = (weights_file_web % (i_e + 1)) + '-' + str(seed)
                 model.save_weights(weights_file_name)
                 model_web.save_weights(weights_file_name_web)
@@ -349,6 +354,12 @@ def predict(config):
         model, model_web = load_model(config)
         model.load_weights(weights_file)
         weights_file_web = str(global_conf['weights_file_web']) + '.' + str(global_conf['test_weights_iters']) + '-' + str(seed)
+        model_web.load_weights(weights_file_web)
+    elif config['net_name'] == 'DMN_CNN_MTL_All':
+        model, model_web, model_clf = load_model(config)
+        model.load_weights(weights_file)
+        weights_file_web = str(global_conf['weights_file_web']) + '.' + str(
+            global_conf['test_weights_iters']) + '-' + str(seed)
         model_web.load_weights(weights_file_web)
     else:
         model = load_model(config)
