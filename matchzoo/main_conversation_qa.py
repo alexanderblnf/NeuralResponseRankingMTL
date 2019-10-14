@@ -70,8 +70,8 @@ def train(config):
     # read basic config
     global_conf = config["global"]
     learning_rate = global_conf['learning_rate']
+    use_existing_weights = global_conf['use_existing_weights']
     optimizer = Adam(lr=learning_rate)
-    weights_file = str(global_conf['weights_file']) + '.%d'
     weights_file_web = str(global_conf['weights_file_web']) + '.%d' if 'weights_file_web' in global_conf else None
     display_interval = int(global_conf['display_interval'])
     num_iters = int(global_conf['num_iters'])
@@ -158,6 +158,11 @@ def train(config):
 
     if config['net_name'] == 'DMN_CNN_MTL':
         model, model_clf = load_model(config)
+        if use_existing_weights:
+            weights_file_to_load = str(global_conf['weights_file']) + '.' + str(
+                global_conf['weights_to_load']) + '-' + str(seed)
+            model.load_weights(weights_file_to_load)
+
         model_clf.compile(optimizer=optimizer, loss=custom_loss)
         print '[Model] MTL models Compile Done.'
     elif config['net_name'] == 'DMN_CNN_INTENTS':
@@ -166,11 +171,23 @@ def train(config):
         print '[Model] Intent Only classifier model Compile Done.'
     elif config['net_name'] == 'DMN_CNN_MTL_Web' or config['net_name'] == 'DMN_CNN_MTL_Web_v2':
         model, model_web = load_model(config)
+        if use_existing_weights:
+            weights_file_to_load = str(global_conf['weights_file']) + '.' + str(
+                global_conf['weights_to_load']) + '-' + str(seed)
+            model.load_weights(weights_file_to_load)
+            weights_file_web = str(global_conf['weights_file_web']) + '.' + str(
+                global_conf['weights_to_load']) + '-' + str(seed)
+            model_web.load_weights(weights_file_web)
     elif config['net_name'] == 'DMN_CNN_MTL_All':
         model, model_web, model_clf = load_model(config)
         model_clf.compile(optimizer=optimizer, loss=custom_loss)
     else:
         model = load_model(config)
+        if use_existing_weights:
+            weights_file_to_load = str(global_conf['weights_file']) + '.' + str(
+                global_conf['test_weights_iters']) + '-' + str(seed)
+            model.load_weights(weights_file_to_load)
+
         print '[Model] Response Ranking model Compile Done.'
 
     eval_metrics = OrderedDict()
@@ -485,6 +502,7 @@ def main(argv):
     parser.add_argument('--keras_random_seed')
     parser.add_argument('--predict')
     parser.add_argument('--learning_rate', help='Set the learning rate')
+    parser.add_argument('--use_existing_weights', help='Specify whether to use existing weights or overwrite')
 
     args = parser.parse_args()
     # parse the hyper-parameters from the command lines
@@ -521,6 +539,7 @@ def main(argv):
         keras_random_seed = args.keras_random_seed
         predict_eval = args.predict
         learning_rate = args.learning_rate
+        use_existing_weights = args.use_existing_weights
 
         if embed_size != None:
             config['inputs']['share']['embed_size'] = int(embed_size)
@@ -564,6 +583,8 @@ def main(argv):
             config['global']['num_iters'] = int(num_iters)
         if learning_rate != None:
             config['global']['learning_rate'] = float(learning_rate)
+        if use_existing_weights != None:
+            config['global']['use_existing_weights'] = use_existing_weights
         if keras_random_seed != None:
             global seed
             seed = int(keras_random_seed)
