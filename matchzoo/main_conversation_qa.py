@@ -72,6 +72,7 @@ def train(config):
     learning_rate = global_conf['learning_rate']
     use_existing_weights = global_conf['use_existing_weights'] if 'use_existing_weights' in global_conf else None
     optimizer = Adam(lr=learning_rate)
+    weights_file = str(global_conf['weights_file']) + '.%d'
     weights_file_web = str(global_conf['weights_file_web']) + '.%d' if 'weights_file_web' in global_conf else None
     display_interval = int(global_conf['display_interval'])
     num_iters = int(global_conf['num_iters'])
